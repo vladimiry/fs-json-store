@@ -6,7 +6,7 @@ import {test, TestContext} from "ava";
 
 import {Model, Store} from "dist";
 import {fs as defaultFs} from "dist/fs/fs";
-import {volume as setupMemFs} from "dist/fs/memfs";
+import {volume} from "dist/fs/memfs";
 
 interface StoredObject extends Partial<Model.StoreEntity> {
     data: any;
@@ -24,7 +24,11 @@ test("instantiating with default options", async (t) => {
     t.falsy(store.validators);
 });
 
-run(setupMemFs(), {
+const vol = volume();
+
+vol.impl.mkdirpSync(process.cwd());
+
+run(vol, {
     fsName: "memFs",
     outputPath: process.cwd(),
 });

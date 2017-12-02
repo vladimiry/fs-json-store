@@ -2,7 +2,7 @@
 
 is a module for Node.js for storing JSON data on the file system.
 
-Module simply serializes/deserializes a file using `JSON.stringify / JSON.parse` functions, so it would not be great to use it with a huge data sets, but it's ok for handling simple needs like storing app settings, etc.
+Module simply serializes/deserializes a file using `JSON.stringify / JSON.parse` functions, so it would not be a great idea to use it with a huge data sets, but it's ok for handling simple needs like storing app settings, etc.
 
 ## Features
 
@@ -15,11 +15,44 @@ Module simply serializes/deserializes a file using `JSON.stringify / JSON.parse`
 ## Technical Notes
 - Module provides only `async` methods, that return ES2015 Promises, `sync` methods set is not supported.
 - Module copes with [EPERM errors](https://github.com/search?q=EPERM&type=Issues) using [fs-no-eperm-anymore](https://github.com/vladimiry/fs-no-eperm-anymore) module.
-- Module uses a custom atomic file writing implementation since [write-file-atomic](https://github.com/npm/write-file-atomic/issues/28) module doesn't yet properly handle the [EPERM errors](https://github.com/isaacs/node-graceful-fs/pull/119) on Windows.
+- Module uses a custom atomic file writing implementation since [write-file-atomic](https://github.com/npm/write-file-atomic) module [doesn't yet properly handle](https://github.com/npm/write-file-atomic/issues/28) the [EPERM errors](https://github.com/isaacs/node-graceful-fs/pull/119) on Windows.
 
 ## Motivation
 
 I needed a simple to use module for storing JSON data on the file system with atomic writing, custom adapters, custom validators, optimistic locking features supported and TypeScript declarations provided. Besides store is supposed to cope with the EPERM errors pseudo-randomly happening on Windows. I didn't find an existing module that would meet the criteria, so a new one has been built.
+
+## Getting started
+
+Using JavaScript and Promises:
+
+```javascript
+const {Store} = require("fs-json-store");
+
+const store = new Store({file: "data.json"});
+
+store.write(["hello"])
+    .then((data) => store.write([...data, "world"]))
+    .then(console.log) // prints "[ 'hello', 'world' ]"
+    .then(() => store.read())
+    .then(console.log); // prints "[ 'hello', 'world' ]"
+```
+
+Using TypeScript and async/await:
+
+```typescript
+import {Store} from "fs-json-store";
+
+(async () => {
+    const store = new Store({file: "data.json"});
+
+    console.log( // prints "[ 'hello', 'world' ]"
+        await store.write([...await store.write(["hello"]), "world",]),
+    );
+    console.log( // prints "[ 'hello', 'world' ]"
+        await store.read(),
+    );
+})();
+```
 
 ## Store Signatures 
 

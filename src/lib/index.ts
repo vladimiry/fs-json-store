@@ -38,7 +38,8 @@ class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         return new Store<E>({
             ...this.options,
             ...opts,
-            file: opts && opts.file || this.file, // enforcing options state to always have the "file" property filled
+            // enforcing options state to always have the "file" property filled
+            file: path.resolve(opts && opts.file || this.file),
         });
     }
 
