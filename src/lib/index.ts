@@ -122,23 +122,10 @@ class Store<E extends Model.StoreEntity> implements Model.Store<E> {
 
         if (this.optimisticLocking) {
             const nextRevision = await this.resolveNewRevision(data, options && options.readAdapter);
-            const action = async () => await finalAction(Object.assign({}, data, {_rev: nextRevision}));
-            let releaseLock = () => undefined;
+            const releaseLock = await promisify(lockfile.lock)(`${this.file}`, {fs: this.fs.impl, realpath: false});
 
             try {
-                releaseLock = await promisify(lockfile.lock)(`${this.file}`, {fs: this.fs.impl});
-            } catch (error) {
-                // TODO make locking work for the not yet created data file too
-                // to prevent concurrent creating the same file by different processes
-                if (error.code === FS_ERROR_CODE_ENOENT) {
-                    return action();
-                }
-
-                throw error;
-            }
-
-            try {
-                return action();
+                return await finalAction(Object.assign({}, data, {_rev: nextRevision}));
             } finally {
                 releaseLock();
             }
