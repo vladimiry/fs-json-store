@@ -1,0 +1,10 @@
+# IDE Idea
+/.idea
+*.iml
+
+# Node.js
+node_modules
+npm-debug.log
+
+/dist/
+/output/
