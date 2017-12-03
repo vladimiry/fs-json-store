@@ -9,13 +9,13 @@ Module simply serializes/deserializes a file using `JSON.stringify / JSON.parse`
 ## Features
 
 - Atomic writing. Means data is not going to be corrupted (like getting half-written data file on abnormal program exit or power loss).
+- File system abstraction. For example, data can be stored in-memory using built-in [memfs](https://github.com/streamich/memfs) abstraction.
 - Custom adapters support.
 - Custom validation functions support.
 - Optimistic locking support (versioning).
-- File system abstraction.
 
 ## Technical Notes
-- Module provides only `async` methods, that return ES2015 Promises, `sync` methods set is not supported.
+- Module provides only `async` methods that return ES2015 Promises, `sync` methods set is not supported.
 - Module copes with [EPERM errors](https://github.com/search?q=EPERM&type=Issues) using [fs-no-eperm-anymore](https://github.com/vladimiry/fs-no-eperm-anymore) module.
 - Module uses a custom atomic file writing implementation since [write-file-atomic](https://github.com/npm/write-file-atomic) module [doesn't yet properly handle](https://github.com/npm/write-file-atomic/issues/28) the [EPERM errors](https://github.com/isaacs/node-graceful-fs/pull/119) on Windows.
 
@@ -62,11 +62,11 @@ import {Store} from "fs-json-store";
 
 - **`options`** `(object, required)`: an object with the flowing properties:
     - **`file`** `(string, required)`: store file path.
-    - **`fs`** `(object, optional, defaults to the node's "fs" wrapper)`: file system abstraction implementation. There are two built-in implementations:  wrapper of the node's `fs` module and [memfs](https://github.com/streamich/memfs) wrapper.
-    - **`adapter`** `(object, optional)`: object or class instance with the `write(data: Buffer): Promise<Buffer>` and `read(data: Buffer): Promise<Buffer` functions implemented. Adapter can be used for example for the data encryption or archiving.
+    - **`fs`** `(object, optional, defaults to the node's "fs" wrapper)`: file system abstraction implementation. There are two built-in implementations: wrapped node's `fs` and [memfs](https://github.com/streamich/memfs) modules. Custom abstractions can be added implementing the `StoreFs` interface.
+    - **`adapter`** `(object, optional)`: object or class instance with the `write(data: Buffer): Promise<Buffer>` and `read(data: Buffer): Promise<Buffer` functions implemented. Custom adapter can be used for example for data encryption/archiving.
     - **`optimisticLocking`** `(boolean, optional, defaults to false)`: flag property that toggles optimistic locking feature. With optimistic locking feature enabled stored data must be of the JSON `object` type, since the system `_rev` counter property needs be injected into the stored object.
 
-    - **`validators`** `(array, optional)`: array of the custom validation functions with the ```(data) => Promise<string | null>``` signature, where `data` is the stored data. Store executes the `validate` method during both `read / write` operations.
+    - **`validators`** `(array, optional)`: array of the custom validation functions with the ```(data) => Promise<string | null>``` signature, where `data` is the stored data. Store executes exposed `validate` method during both `read / write` operations.
 
 ### `clone([options]): Store<E>`
 
@@ -74,11 +74,11 @@ Synchronous method that returns a cloned store instance. See `options` parameter
 
 ### `readable(): Promise<boolean>`
 
-Asynchronous method that returns `true` if the file associated with the store is readable. It's basically a replacement for the `exists` method.
+Asynchronous method that returns `true` if `file` associated with store is readable. It's basically a replacement for the `exists` method.
 
 ### `readExisting([options]): Promise<E>`
 
-Asynchronous method that returns the stored data. Method throws an error if store is not `readable()`. Optional `options` argument is an object that can have the optional `adapter` property. Store uses the explicitly specified `adapter` overriding the instance's adapter just for the single read operation (it might be useful for example in case if the data file initially was written using another adapter, so initial reading can be done using explicitly specified adapter).
+Asynchronous method that returns the stored data. Method throws an error if store is not `readable()`. Optional `options` argument is an object that can have the optional `adapter` property. Store uses the explicitly specified `adapter` overriding the instance's adapter just for the single `read` method execution (it might be useful for example in case if the data file initially was written using another adapter, so initial reading can be done using explicitly specified adapter).
 
 ### `read([options]): Promise<E | null>`
 
@@ -86,7 +86,7 @@ Asynchronous method that returns the stored data. Optional `options` argument is
 
 ### `write(data, [options]): Promise<E>`
 
-Asynchronous method that writes the data to the file and returns the actual data. Optional `options.readAdapter` argument will be passed to the `read` method as the `options.adapter` argument (`read` method needs to be called during writing in case of the optimistic locking feature enabled).
+Asynchronous method that writes data to `file` and returns the actual data. Optional `options.readAdapter` argument will be passed to the `read` method as the `options.adapter` argument (`read` method needs to be called during writing in case of the optimistic locking feature enabled).
 
 ### `validate(data, messagePrefix?: string): Promise<void>`
 
@@ -94,7 +94,7 @@ Asynchronous method that runs validation functions and throws an error in case o
 
 ### `remove(): Promise<void>`
 
-Asynchronous method that removes the store associated file.
+Asynchronous method that removes the store associated `file`.
 
 ## Usage Examples
 
@@ -159,7 +159,7 @@ const examples = [
         try {
             await store.write({numbers: []});
         } catch (error) {
-            console.log(error); // prints error since due to the failed validation
+            console.log(error); // prints error due to the failed validation
         }
 
         const storedData = await  store.write({numbers: [1]});
