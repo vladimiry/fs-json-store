@@ -39,7 +39,7 @@
     ]
   },
   "devDependencies": {
-    "@types/node": "8.0.53",
+    "@types/node": "8.0.54",
     "@types/randomstring": "1.1.6",
     "@types/sinon": "4.0.0",
     "ava": "0.24.0",
@@ -54,16 +54,17 @@
     "ts-node": "3.3.0",
     "tsconfig-paths": "2.4.0",
     "tslint": "5.8.0",
-    "tslint-rules-bunch": "0.0.2",
+    "tslint-rules-bunch": "0.0.3",
     "typescript": "2.6.2"
   },
   "dependencies": {
     "combine-errors": "3.0.3",
-    "fs-no-eperm-anymore": "1.0.0",
+    "fs-no-eperm-anymore": "1.0.1",
     "imurmurhash": "0.1.4",
     "kind-of": "6.0.2",
     "memfs": "2.6.0",
     "proper-lockfile": "2.0.1",
+    "tslib": "1.8.0",
     "util.promisify": "1.0.0"
   }
 }

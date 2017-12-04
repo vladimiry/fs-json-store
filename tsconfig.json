@@ -3,8 +3,9 @@
   // https://www.typescriptlang.org/docs/handbook/compiler-options.html
   "compilerOptions": {
     "target": "es5",
-    "strict": true,
     "module": "commonjs",
+    "strict": true,
+    "importHelpers": true,
     "noEmitOnError": true,
     "declaration": true,
     "sourceMap": true,
