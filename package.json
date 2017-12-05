@@ -39,7 +39,7 @@
     ]
   },
   "devDependencies": {
-    "@types/node": "^8.0.54",
+    "@types/node": "^8.0.55",
     "@types/randomstring": "^1.1.6",
     "@types/sinon": "^4.0.0",
     "ava": "^0.24.0",

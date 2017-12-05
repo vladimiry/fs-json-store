@@ -10,7 +10,7 @@ Module simply serializes/deserializes a file using `JSON.stringify / JSON.parse`
 
 - Atomic writing. Means data is not going to be corrupted (like getting half-written data file on abnormal program exit or power loss).
 - File system abstraction. For example, data can be stored in-memory using built-in [memfs](https://github.com/streamich/memfs) abstraction.
-- Custom adapters support.
+- Custom adapters support. See [fs-json-store-encryption-adapter](https://github.com/vladimiry/fs-json-store-encryption-adapter) as an example.
 - Custom validation functions support.
 - Optimistic locking support (versioning).
 
