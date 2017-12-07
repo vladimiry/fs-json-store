@@ -24,6 +24,6 @@
   },
   "include": [
     "./src/lib/index.ts",
-    "./src/lib/fs/index.ts"
+    "./src/lib/private/fs-impl/index.ts"
   ]
 }

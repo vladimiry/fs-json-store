@@ -4,13 +4,14 @@ import * as randomstring from "randomstring";
 import * as kindOf from "kind-of";
 import {test, TestContext} from "ava";
 
-import {Model, Store} from "dist";
-import {fs as defaultFs} from "dist/fs/fs";
-import {volume} from "dist/fs/memfs";
+import {Fs, Model, Store} from "dist";
 
 interface StoredObject extends Partial<Model.StoreEntity> {
     data: any;
 }
+
+const defaultFs = Fs.Fs.fs;
+const buildMemFsVolume = Fs.MemFs.volume;
 
 test("instantiating with default options", async (t) => {
     const options = Object.freeze({
@@ -24,11 +25,11 @@ test("instantiating with default options", async (t) => {
     t.falsy(store.validators);
 });
 
-const vol = volume();
+const memFsVolume = buildMemFsVolume();
 
-vol.impl.mkdirpSync(process.cwd());
+memFsVolume.impl.mkdirpSync(process.cwd());
 
-run(vol, {
+run(memFsVolume, {
     fsName: "memFs",
     outputPath: process.cwd(),
 });
@@ -146,6 +147,11 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
             t.deepEqual(storedData, wrongRevData2);
         } finally {
             await store.remove();
+            t.false(await store.readable());
+
+            if (store2) {
+                await t.throws(store2.remove());
+            }
         }
     });
 
@@ -232,28 +238,34 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
 
         t.is(store.validators && store.validators[0], uniqueLoginValidator);
 
-        let data: Accounts = {accounts: []};
-        let updatedData = await store.write(data);
-        t.is(uniqueLoginValidatorSpy.callCount, 2);
-        t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
+        try {
+            let data: Accounts = {accounts: []};
+            let updatedData = await store.write(data);
+            t.is(uniqueLoginValidatorSpy.callCount, 2);
+            t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
 
-        data = {...updatedData, accounts: [...updatedData.accounts, {login}]};
-        updatedData = await store.write(data);
-        t.is(uniqueLoginValidatorSpy.callCount, 5);
-        t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
+            data = {...updatedData, accounts: [...updatedData.accounts, {login}]};
+            updatedData = await store.write(data);
+            t.is(uniqueLoginValidatorSpy.callCount, 5);
+            t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
 
-        data = {...updatedData, accounts: [...updatedData.accounts, {login}]};
-        const validationError = await t.throws(store.write(data));
-        t.true(validationError.message.indexOf(`Duplicate accounts identified. Duplicated logins: ${login}.`) !== -1);
-        t.deepEqual(await store.read(), updatedData);
-        t.is(uniqueLoginValidatorSpy.callCount, 7);
-        t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
+            data = {...updatedData, accounts: [...updatedData.accounts, {login}]};
+            const validationError = await t.throws(store.write(data));
+            t.true(validationError.message.indexOf(`Duplicate accounts identified. Duplicated logins: ${login}.`) !== -1);
+            t.deepEqual(await store.read(), updatedData);
+            t.is(uniqueLoginValidatorSpy.callCount, 7);
+            t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
 
-        data = {...updatedData, accounts: [...updatedData.accounts, {login: "login2"}]};
-        await store.write(data);
-        t.deepEqual(await store.read(), {...data, _rev: updatedData._rev + 1});
-        t.is(uniqueLoginValidatorSpy.callCount, 11);
-        t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
+            data = {...updatedData, accounts: [...updatedData.accounts, {login: "login2"}]};
+            await store.write(data);
+            t.deepEqual(await store.read(), {...data, _rev: updatedData._rev + 1});
+            t.is(uniqueLoginValidatorSpy.callCount, 11);
+            t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
+
+        } finally {
+            await store.remove();
+            t.false(await store.readable());
+        }
     });
 
     // TODO test concurrent writing

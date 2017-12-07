@@ -2,29 +2,17 @@ import * as path from "path";
 import * as combineErrors from "combine-errors";
 import * as imurmurhash from "imurmurhash";
 import {PathLike, Stats} from "fs";
-import {instantiate} from "fs-no-eperm-anymore";
 
-import {WriteFileAtomicOptions} from "./model";
-import {WriteFileOptions} from "../../private/model";
-import {FS_ERROR_CODE_ENOENT} from "../../private/constants";
+import * as Model from "./model";
+import {FS_ERROR_CODE_ENOENT} from "../constants";
+import {WriteFileOptions} from "../fs-write-model";
+import {StoreFsReference} from "../model";
 
-const DEFAULT_ATOMIC_OPTIONS: WriteFileAtomicOptions = {
+const DEFAULT_ATOMIC_OPTIONS: Model.WriteFileAtomicOptions = {
     fsync: false,
-    retry: {
-        items: [
-            {
-                platforms: ["win32"],
-                errorCodes: ["EPERM"],
-                options: {
-                    retryIntervalMs: 100,
-                    retryTimeoutMs: 10 * 1000,
-                },
-            },
-        ],
-    },
 };
 
-export const generateTmpFileName: (file: string) => string = ((): any => {
+const generateTmpFileName: (file: string) => string = ((): any => {
     let getTmpFilePathInvocation = 0;
 
     return (file: string) => file + "." + imurmurhash(__filename)
@@ -34,7 +22,7 @@ export const generateTmpFileName: (file: string) => string = ((): any => {
         .result();
 })();
 
-export const queue: <T>(file: string, action: () => Promise<T>) => Promise<T> = ((): any => {
+const queue: <T>(file: string, action: () => Promise<T>) => Promise<T> = ((): any => {
     const QUEUE_MAP: { [fileMutex: string]: Array<() => Promise<void>> | undefined } = {};
 
     return <T>(file: string, action: () => Promise<T>) => {
@@ -74,21 +62,20 @@ export const queue: <T>(file: string, action: () => Promise<T>) => Promise<T> = 
     }
 })();
 
-export async function writeFileAtomic(filePath: PathLike,
-                                      data: any,
-                                      writeFileoptions?: WriteFileOptions,
-                                      atomicOptionsInput?: Partial<WriteFileAtomicOptions>): Promise<void> {
+async function writeFileAtomic(fs: StoreFsReference,
+                               filePath: PathLike /*| number*/,
+                               data: any,
+                               writeFileOptions?: WriteFileOptions,
+                               atomicOptionsInput?: Partial<Model.WriteFileAtomicOptions>): Promise<void> {
+    const atomicOptions: Model.WriteFileAtomicOptions = {...DEFAULT_ATOMIC_OPTIONS, ...atomicOptionsInput};
     const file = filePath.toString();
 
     // in order to reduce the same file locking probability renaming occurs in serial mode using "queue" approach
     // locking leads to the "EPERM" errors on Windows https://github.com/isaacs/node-graceful-fs/pull/119
     // TODO "queue" thing doesn't seem to be needed having the "retry" scenario implemented
-
     return await queue(
         file,
         async () => {
-            const atomicOptions: WriteFileAtomicOptions = {...DEFAULT_ATOMIC_OPTIONS, ...atomicOptionsInput};
-            const fs = instantiate(atomicOptions.retry);
             const tmpFile = await (async () => {
                 let fileStats: Stats | undefined;
 
@@ -104,7 +91,7 @@ export async function writeFileAtomic(filePath: PathLike,
                 const fd = await fs.open(resultFile, "w");
 
                 try {
-                    await fs.writeFile(resultFile, data, writeFileoptions);
+                    await fs.writeFile(resultFile, data, writeFileOptions);
 
                     if (atomicOptions.fsync) {
                         await fs.fsync(fd);
@@ -142,3 +129,8 @@ export async function writeFileAtomic(filePath: PathLike,
         },
     );
 }
+
+export {
+    Model,
+    writeFileAtomic,
+};

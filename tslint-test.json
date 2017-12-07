@@ -16,7 +16,8 @@
                 "target": "src/test/**/*",
                 "from": [
                   "src/lib",
-                  "src/lib/**/*"
+                  "src/lib/**/*",
+                  "dist/**/*"
                 ]
               }
             ]
