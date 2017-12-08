@@ -17,7 +17,9 @@ Module simply serializes/deserializes a file using `JSON.stringify / JSON.parse`
 ## Technical Notes
 - Module provides only `async` methods that return ES2015 Promises, `sync` methods set is not supported.
 - Module copes with [EPERM errors](https://github.com/search?q=EPERM&type=Issues) using [fs-no-eperm-anymore](https://github.com/vladimiry/fs-no-eperm-anymore) module.
-- Module uses a custom atomic file writing implementation since [write-file-atomic](https://github.com/npm/write-file-atomic) module [doesn't yet properly handle](https://github.com/npm/write-file-atomic/issues/28) the [EPERM errors](https://github.com/isaacs/node-graceful-fs/pull/119) on Windows.
+- Module uses a custom atomic file writing implementation for the following reasons:
+  - atomic writing should be applied to all the fs abstractions (`StoreFs` implementations), not to just the node's `fs` module only, see [related issue](https://github.com/vladimiry/fs-json-store/issues/1) for details.
+  - [write-file-atomic](https://github.com/npm/write-file-atomic) module [doesn't yet properly handle](https://github.com/npm/write-file-atomic/issues/28) the [EPERM errors](https://github.com/isaacs/node-graceful-fs/pull/119) on Windows.  
 
 ## Motivation
 
