@@ -2,7 +2,7 @@ import kindOf from "kind-of";
 import path from "path";
 import randomstring from "randomstring";
 import sinon from "sinon";
-import {test, TestContext} from "ava";
+import {ExecutionContext, test} from "ava";
 
 import {Fs, Model, Store} from "dist";
 
@@ -271,7 +271,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
     // TODO test concurrent writing
 
     function buildStore<E extends Partial<Model.StoreEntity> = StoredObject>(
-        t: TestContext,
+        t: ExecutionContext,
         storeOpts?: Partial<Model.StoreOptions<E>>,
     ) {
         const spies = {
