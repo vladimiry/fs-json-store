@@ -1,4 +1,6 @@
-import {storeFsMethods} from "./constants";
+import {NAME as FS_NAME} from "./fs-impl/fs";
+import {NAME as MEMFS_NAME} from "./fs-impl/mem-fs";
+import {STORE_FS_METHODS} from "./constants";
 import {WriteFile, WriteFileAtomic} from "./fs-write-model";
 
 export interface Store<E extends StoreEntity> extends StoreOptions<E> {
@@ -43,6 +45,10 @@ export interface StoreAdapter {
 
 export type StoreValidator<E extends StoreEntity> = (data: E) => Promise<string | null>;
 
-export type StoreFsReference = typeof storeFsMethods & WriteFile;
+export type StoreFsReference = typeof STORE_FS_METHODS & WriteFile;
 
-export type StoreFs = StoreFsReference & WriteFileAtomic & { impl: any; };
+export type StoreFs =
+    StoreFsReference
+    & WriteFileAtomic
+    & { _impl: any; }
+    & { _name: typeof MEMFS_NAME | typeof FS_NAME | string; };

@@ -27,20 +27,22 @@ test("instantiating with default options", async (t) => {
 
 const memFsVolume = buildMemFsVolume();
 
-memFsVolume.impl.mkdirpSync(process.cwd());
+memFsVolume._impl.mkdirpSync(process.cwd());
 
 run(memFsVolume, {
-    fsName: "memFs",
+    fsName: memFsVolume._name,
     outputPath: process.cwd(),
 });
 
 run(defaultFs, {
-    fsName: "fs",
+    fsName: defaultFs._name,
     outputPath: path.join(process.cwd(), "./output/test"),
 });
 
 function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
     test(`${opts.fsName}: read/write/remove`, async (t) => {
+        t.truthy(opts.fsName);
+
         const {spies, store} = buildStore(t);
         let store2: Store<StoredObject> | undefined;
 

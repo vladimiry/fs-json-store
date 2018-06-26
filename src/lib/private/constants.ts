@@ -9,7 +9,7 @@ export const FS_ERROR_CODE_EEXIST = "EEXIST";
 
 export const MKDIR_MODE = 0o755;
 
-export const storeFsMethods = Object.freeze({
+export const STORE_FS_METHODS = Object.freeze({
     chmod: promisify(fs.chmod),
     chown: promisify(fs.chown),
     close: promisify(fs.close),

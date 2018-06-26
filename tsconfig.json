@@ -17,7 +17,8 @@
     "declaration": true,
     "sourceMap": true,
     "lib": [
-      "es2015"
+      "es2015",
+      "es2016.array.include"
     ],
     "baseUrl": ".",
     "outDir": "./dist",

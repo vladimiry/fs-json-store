@@ -1,10 +1,13 @@
 import kindOf from "kind-of";
 import path from "path";
 import properLockfile from "proper-lockfile";
+import {callbackify} from "util";
 
-import {FS_ERROR_CODE_EEXIST, FS_ERROR_CODE_ENOENT, MKDIR_MODE} from "./constants";
-import {fs as defaultFs} from "./fs-impl/fs/index";
 import * as Model from "./model";
+import {fs as defaultFs} from "./fs-impl/fs/index";
+import {FS_ERROR_CODE_EEXIST, FS_ERROR_CODE_ENOENT, MKDIR_MODE} from "./constants";
+import {NAME as MEMFS_NAME} from "./fs-impl/mem-fs";
+import {StoreFsReference} from "./model";
 
 export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
     private readonly options: Model.StoreOptions<E>;
@@ -122,7 +125,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
 
         if (this.optimisticLocking) {
             const nextRevision = await this.resolveNewRevision(data, options && options.readAdapter);
-            const releaseLock = await properLockfile.lock(`${this.file}`, {fs: this.fs.impl, realpath: false});
+            const releaseLock = await properLockfile.lock(`${this.file}`, {fs: this.callbackifiedFsImpl(), realpath: false});
 
             try {
                 return await finalAction(Object.assign({}, data, {_rev: nextRevision}));
@@ -212,5 +215,21 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
                 }
             }
         }
+    }
+
+    protected callbackifiedFsImpl(): Record<keyof StoreFsReference, (...params: any[]) => void> {
+        if (this.fs._name === MEMFS_NAME) {
+            return this.fs._impl;
+        }
+
+        return Object
+            .keys(this.fs._impl)
+            .filter((key) => {
+                return !["writeFileAtomic", "impl"].includes(key) && typeof this.fs._impl[key] === "function";
+            })
+            .reduce((accumulator, key) => {
+                accumulator[key] = callbackify(this.fs._impl[key]);
+                return accumulator;
+            }, {} as any);
     }
 }

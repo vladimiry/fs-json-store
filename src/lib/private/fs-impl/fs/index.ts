@@ -5,6 +5,9 @@ import {StoreFs} from "../../model";
 import {WriteFileOptions} from "../../fs-write-model";
 import {Model as WriteFileAtomicModel, writeFileAtomic} from "../../write-file-atomic/index";
 
+// keep definition on file top
+export const NAME = "internal.fs-no-eperm-anymore";
+
 const DEFAULT_FS_NO_EPERM_ANYMORE_OPTIONS: FsNoEpermAnymoreModel.Options = {
     items: [
         {
@@ -26,7 +29,8 @@ export function volume(volumeOptions?: {
     const impl = instantiate(instanceOptions);
 
     return {
-        impl,
+        _impl: impl,
+        _name: NAME,
         chmod: impl.chmod,
         chown: impl.chown,
         close: impl.close,

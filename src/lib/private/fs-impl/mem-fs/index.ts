@@ -6,6 +6,9 @@ import {WriteFileOptions} from "../../fs-write-model";
 import {StoreFs} from "../../model";
 import {Model as WriteFileAtomicModel, writeFileAtomic} from "../../write-file-atomic/index";
 
+// keep definition on file top
+export const NAME = "internal.memfs";
+
 export function volume(volumeOptions?: {
     writeFileAtomicOptions: WriteFileAtomicModel.WriteFileAtomicOptions;
 }): StoreFs {
@@ -13,7 +16,8 @@ export function volume(volumeOptions?: {
     const impl = createFsFromVolume(vol);
 
     return {
-        impl,
+        _impl: impl,
+        _name: NAME,
         chmod: promisify(impl.chmod),
         chown: promisify(impl.chown),
         mkdir: promisify(impl.mkdir),
