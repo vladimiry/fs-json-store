@@ -1,7 +1,7 @@
-import {PathLike} from "fs";
 import {createFsFromVolume, Volume} from "memfs";
+import {PathLike} from "fs";
+import {promisify} from "util";
 
-import {promisify} from "../../util.promisify";
 import {WriteFileOptions} from "../../fs-write-model";
 import {StoreFs} from "../../model";
 import {Model as WriteFileAtomicModel, writeFileAtomic} from "../../write-file-atomic/index";

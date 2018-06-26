@@ -15,6 +15,9 @@
     "storage",
     "store"
   ],
+  "engines": {
+    "node": ">=8.9.4"
+  },
   "main": "./index.js",
   "scripts": {
     "dist:compile": "tsc -p ./src/lib/tsconfig.json --listEmittedFiles",
@@ -66,7 +69,6 @@
     "kind-of": "^6.0.2",
     "memfs": "^2.9.0",
     "proper-lockfile": "^3.0.2",
-    "tslib": "^1.9.3",
-    "util.promisify": "^1.0.0"
+    "tslib": "^1.9.3"
   }
 }
