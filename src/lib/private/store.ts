@@ -1,9 +1,8 @@
-import * as path from "path";
-import * as lockfile from "proper-lockfile";
-import * as kindOf from "kind-of";
+import kindOf from "kind-of";
+import path from "path";
+import properLockfile from "proper-lockfile";
 
 import {FS_ERROR_CODE_EEXIST, FS_ERROR_CODE_ENOENT, MKDIR_MODE} from "./constants";
-import {promisify} from "./util.promisify";
 import {fs as defaultFs} from "./fs-impl/fs/index";
 import * as Model from "./model";
 
@@ -123,7 +122,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
 
         if (this.optimisticLocking) {
             const nextRevision = await this.resolveNewRevision(data, options && options.readAdapter);
-            const releaseLock = await promisify(lockfile.lock)(`${this.file}`, {fs: this.fs.impl, realpath: false});
+            const releaseLock = await properLockfile.lock(`${this.file}`, {fs: this.fs.impl, realpath: false});
 
             try {
                 return await finalAction(Object.assign({}, data, {_rev: nextRevision}));

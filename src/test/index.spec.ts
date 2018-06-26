@@ -1,7 +1,7 @@
-import * as path from "path";
-import * as sinon from "sinon";
-import * as randomstring from "randomstring";
-import * as kindOf from "kind-of";
+import kindOf from "kind-of";
+import path from "path";
+import randomstring from "randomstring";
+import sinon from "sinon";
 import {test, TestContext} from "ava";
 
 import {Fs, Model, Store} from "dist";
@@ -270,8 +270,10 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
 
     // TODO test concurrent writing
 
-    function buildStore<E extends Partial<Model.StoreEntity> = StoredObject>(t: TestContext,
-                                                                             storeOpts?: Partial<Model.StoreOptions<E>>) {
+    function buildStore<E extends Partial<Model.StoreEntity> = StoredObject>(
+        t: TestContext,
+        storeOpts?: Partial<Model.StoreOptions<E>>,
+    ) {
         const spies = {
             adapter: {
                 write: sinon.spy(),

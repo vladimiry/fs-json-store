@@ -1,9 +1,9 @@
 {
   "extends": [
-    "./tslint.json"
+    "./../../tslint.json"
   ],
   "rulesDirectory": [
-    "node_modules/tslint-rules-bunch/rules"
+    "./../../node_modules/tslint-rules-bunch/rules"
   ],
   "rules": {
     "no-import-zones": [

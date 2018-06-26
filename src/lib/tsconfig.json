@@ -1,0 +1,7 @@
+{
+  "extends": "./../../tsconfig.json",
+  "files": [
+    "./index.ts",
+    "./private/fs-impl/index.ts"
+  ]
+}

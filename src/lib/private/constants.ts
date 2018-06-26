@@ -1,8 +1,7 @@
 // TODO TS4023: get rid of the not actually used "url" import
 // related issue https://github.com/Microsoft/TypeScript/issues/9944
-import * as url from "url";
-
-import * as fs from "fs";
+import url from "url";
+import fs from "fs";
 
 import {promisify} from "./util.promisify";
 

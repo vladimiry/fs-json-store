@@ -1,6 +1,6 @@
-import * as path from "path";
-import * as combineErrors from "combine-errors";
-import * as imurmurhash from "imurmurhash";
+import path from "path";
+import combineErrors from "combine-errors";
+import imurmurhash from "imurmurhash";
 import {PathLike, Stats} from "fs";
 
 import * as Model from "./model";
