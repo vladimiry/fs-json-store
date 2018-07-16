@@ -130,7 +130,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
             try {
                 return await finalAction(Object.assign({}, data, {_rev: nextRevision}));
             } finally {
-                releaseLock();
+                await releaseLock();
             }
         }
 

@@ -27,12 +27,20 @@ const queue: <T>(file: string, action: () => Promise<T>) => Promise<T> = ((): an
 
     return <T>(file: string, action: () => Promise<T>) => {
         const fileMutex = path.resolve(file); // putting to queue happens by the absolute path
-        const queuedActionFinishedPromise = new Promise<T>((resolve, reject) => {
+        const queuedActionFinishedPromise = new Promise<T>(async (resolve, reject) => {
             const fileQueue = QUEUE_MAP[fileMutex] = QUEUE_MAP[fileMutex] || [];
-            const queuedAction = async () => action().then(resolve).catch(reject); // wrap the original promise action
+            // wrap the original promise action
+            const queuedAction = async () => {
+                try {
+                    await action();
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            };
 
             if (!fileQueue.length) {
-                queuedAction();
+                await queuedAction();
             } else {
                 fileQueue.push(queuedAction);
             }
@@ -45,7 +53,7 @@ const queue: <T>(file: string, action: () => Promise<T>) => Promise<T> = ((): an
         return queuedActionFinishedPromise;
     };
 
-    function checkQueue(file: string): void {
+    async function checkQueue(file: string): Promise<void> {
         const fileQueue = QUEUE_MAP[file];
 
         if (!fileQueue) {
@@ -55,18 +63,20 @@ const queue: <T>(file: string, action: () => Promise<T>) => Promise<T> = ((): an
         fileQueue.shift(); // remove processed action
 
         if (fileQueue.length) {
-            fileQueue[0]();
+            await fileQueue[0]();
         } else {
             delete QUEUE_MAP[file];
         }
     }
 })();
 
-async function writeFileAtomic(fs: StoreFsReference,
-                               filePath: PathLike /*| number*/,
-                               data: any,
-                               writeFileOptions?: WriteFileOptions,
-                               atomicOptionsInput?: Partial<Model.WriteFileAtomicOptions>): Promise<void> {
+async function writeFileAtomic(
+    fs: StoreFsReference,
+    filePath: PathLike /*| number*/,
+    data: any,
+    writeFileOptions?: WriteFileOptions,
+    atomicOptionsInput?: Partial<Model.WriteFileAtomicOptions>,
+): Promise<void> {
     const atomicOptions: Model.WriteFileAtomicOptions = {...DEFAULT_ATOMIC_OPTIONS, ...atomicOptionsInput};
     const file = filePath.toString();
 
@@ -109,7 +119,7 @@ async function writeFileAtomic(fs: StoreFsReference,
             })();
 
             try {
-                return fs.rename(tmpFile, file);
+                return await fs.rename(tmpFile, file);
             } catch (renameError) {
                 const errors = [
                     renameError,
@@ -119,7 +129,7 @@ async function writeFileAtomic(fs: StoreFsReference,
                 // making sure temporary file is removed
                 // TODO consider removing temp file on "process.on('exit')"
                 try {
-                    fs.unlink(tmpFile);
+                    await fs.unlink(tmpFile);
                 } catch (unlinkError) {
                     errors.push(unlinkError);
                 }
