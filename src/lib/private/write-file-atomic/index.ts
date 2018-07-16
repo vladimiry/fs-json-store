@@ -1,4 +1,3 @@
-import path from "path";
 import combineErrors from "combine-errors";
 import imurmurhash from "imurmurhash";
 import {PathLike, Stats} from "fs";
@@ -22,54 +21,6 @@ const generateTmpFileName: (file: string) => string = ((): any => {
         .result();
 })();
 
-const queue: <T>(file: string, action: () => Promise<T>) => Promise<T> = ((): any => {
-    const QUEUE_MAP: { [fileMutex: string]: Array<() => Promise<void>> | undefined } = {};
-
-    return <T>(file: string, action: () => Promise<T>) => {
-        const fileMutex = path.resolve(file); // putting to queue happens by the absolute path
-        const queuedActionFinishedPromise = new Promise<T>(async (resolve, reject) => {
-            const fileQueue = QUEUE_MAP[fileMutex] = QUEUE_MAP[fileMutex] || [];
-            // wrap the original promise action
-            const queuedAction = async () => {
-                try {
-                    await action();
-                    resolve();
-                } catch (e) {
-                    reject(e);
-                }
-            };
-
-            if (!fileQueue.length) {
-                await queuedAction();
-            } else {
-                fileQueue.push(queuedAction);
-            }
-        });
-        const finallyCheckQueue = () => checkQueue(fileMutex);
-
-        // queue check should happen in any case (error/success = finally handler)
-        queuedActionFinishedPromise.then(finallyCheckQueue, finallyCheckQueue);
-
-        return queuedActionFinishedPromise;
-    };
-
-    async function checkQueue(file: string): Promise<void> {
-        const fileQueue = QUEUE_MAP[file];
-
-        if (!fileQueue) {
-            return;
-        }
-
-        fileQueue.shift(); // remove processed action
-
-        if (fileQueue.length) {
-            await fileQueue[0]();
-        } else {
-            delete QUEUE_MAP[file];
-        }
-    }
-})();
-
 async function writeFileAtomic(
     fs: StoreFsReference,
     filePath: PathLike /*| number*/,
@@ -82,62 +33,56 @@ async function writeFileAtomic(
 
     // in order to reduce the same file locking probability renaming occurs in serial mode using "queue" approach
     // locking leads to the "EPERM" errors on Windows https://github.com/isaacs/node-graceful-fs/pull/119
-    // TODO "queue" thing doesn't seem to be needed having the "retry" scenario implemented
-    return await queue(
-        file,
-        async () => {
-            const tmpFile = await (async () => {
-                let fileStats: Stats | undefined;
+    const tmpFile = await (async () => {
+        let fileStats: Stats | undefined;
 
-                try {
-                    fileStats = await fs.stat(file);
-                } catch (error) {
-                    if (error.code !== FS_ERROR_CODE_ENOENT) {
-                        throw error;
-                    }
-                }
-
-                const resultFile = generateTmpFileName(fileStats ? await fs.realpath(file) : file);
-                const fd = await fs.open(resultFile, "w");
-
-                try {
-                    await fs.writeFile(resultFile, data, writeFileOptions);
-
-                    if (atomicOptions.fsync) {
-                        await fs.fsync(fd);
-                    }
-                } finally {
-                    await fs.close(fd);
-                }
-
-                if (fileStats) {
-                    await fs.chown(resultFile, fileStats.uid, fileStats.gid);
-                    await fs.chmod(resultFile, fileStats.mode);
-                }
-
-                return resultFile;
-            })();
-
-            try {
-                return await fs.rename(tmpFile, file);
-            } catch (renameError) {
-                const errors = [
-                    renameError,
-                    new Error(`Failed to rename "${tmpFile}" => "${file}".`),
-                ];
-
-                // making sure temporary file is removed
-                // TODO consider removing temp file on "process.on('exit')"
-                try {
-                    await fs.unlink(tmpFile);
-                } catch (unlinkError) {
-                    errors.push(unlinkError);
-                }
-
-                throw combineErrors(errors);
+        try {
+            fileStats = await fs.stat(file);
+        } catch (error) {
+            if (error.code !== FS_ERROR_CODE_ENOENT) {
+                throw error;
             }
-        },
-    );
+        }
+
+        const resultFile = generateTmpFileName(fileStats ? await fs.realpath(file) : file);
+        const fd = await fs.open(resultFile, "w");
+
+        try {
+            await fs.writeFile(resultFile, data, writeFileOptions);
+
+            if (atomicOptions.fsync) {
+                await fs.fsync(fd);
+            }
+        } finally {
+            await fs.close(fd);
+        }
+
+        if (fileStats) {
+            await fs.chown(resultFile, fileStats.uid, fileStats.gid);
+            await fs.chmod(resultFile, fileStats.mode);
+        }
+
+        return resultFile;
+    })();
+
+    try {
+        return await fs.rename(tmpFile, file);
+    } catch (renameError) {
+        const errors = [
+            renameError,
+            new Error(`Failed to rename "${tmpFile}" => "${file}".`),
+        ];
+
+        // making sure temporary file is removed
+        // TODO consider removing temp file on "process.on('exit')"
+        try {
+            await fs.unlink(tmpFile);
+        } catch (unlinkError) {
+            errors.push(unlinkError);
+        }
+
+        throw combineErrors(errors);
+    }
 }
 
 export {
