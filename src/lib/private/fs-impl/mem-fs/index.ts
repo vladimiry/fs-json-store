@@ -1,17 +1,12 @@
 import {createFsFromVolume, Volume} from "memfs";
-import {PathLike} from "fs";
 import {promisify} from "util";
 
-import {WriteFileOptions} from "../../fs-write-model";
 import {StoreFs} from "../../model";
-import {Model as WriteFileAtomicModel, writeFileAtomic} from "../../write-file-atomic/index";
 
 // keep definition on file top
 export const NAME = "internal.memfs";
 
-export function volume(volumeOptions?: {
-    writeFileAtomicOptions: WriteFileAtomicModel.WriteFileAtomicOptions;
-}): StoreFs {
+export function volume(): StoreFs {
     const vol = new Volume();
     const impl = createFsFromVolume(vol);
 
@@ -29,9 +24,7 @@ export function volume(volumeOptions?: {
         rename: promisify(impl.rename),
         stat: promisify(impl.stat),
         writeFile: promisify(impl.writeFile),
-        writeFileAtomic(path: PathLike /*| number*/, data: any, writeFileOptions?: WriteFileOptions): Promise<void> {
-            return writeFileAtomic(impl, path, data, writeFileOptions, volumeOptions && volumeOptions.writeFileAtomicOptions);
-        },
+        writeFileAtomic: promisify(impl.writeFile),
         unlink: promisify(impl.unlink),
     };
 }

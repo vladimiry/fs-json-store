@@ -118,7 +118,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
             const buffer = Buffer.from(JSON.stringify(dataToSave, null, 4));
             const adaptedBuffer = this.adapter ? await this.adapter.write(buffer) : buffer;
 
-            await this.fs.writeFile(this.file, adaptedBuffer);
+            await this.fs.writeFileAtomic(this.file, adaptedBuffer);
 
             return this.readExisting();
         };
