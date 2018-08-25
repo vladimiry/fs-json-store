@@ -70,9 +70,9 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
             t.is(spies.validator.callCount, 3);
 
             // update
-            data = {...storedData, data: {value3: {random: Number(new Date())}, value4: {random: Number(new Date())}}};
+            data = {...storedData, data: {value3: {random: Number(new Date())}, value4: {random: Number(new Date())}}} as TODO;
             dataDump = JSON.stringify(data);
-            expectedData = {...data, _rev: storedData._rev + 1};
+            expectedData = {...data, _rev: (storedData._rev as number) + 1};
             storedData = await store.write(data);
             t.is(JSON.stringify(data), dataDump, "making sure data parameter has not been mutated");
             t.deepEqual(storedData, expectedData);
@@ -84,8 +84,8 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
             // without adapter
             store2 = store.clone({adapter: undefined});
             t.falsy(store2.adapter);
-            data = {...storedData, data: {value5: {random: Number(new Date())}}};
-            expectedData = {...data, _rev: storedData._rev + 1};
+            data = {...storedData, data: {value5: {random: Number(new Date())}}} as TODO;
+            expectedData = {...data, _rev: (storedData._rev as number) + 1};
             storedData = await store2.write(data);
             t.deepEqual(storedData, expectedData);
             t.deepEqual(await store2.readExisting(), expectedData);
@@ -133,14 +133,14 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
             let expectedData = data;
             t.deepEqual(storedData, expectedData);
 
-            expectedData = {...storedData, _rev: storedData._rev + 1};
+            expectedData = {...storedData, _rev: (storedData._rev as number) + 1};
             storedData = await store.write(storedData);
             t.deepEqual(storedData, expectedData);
 
-            const wrongRevData1 = {...storedData, _rev: storedData._rev - 1};
+            const wrongRevData1 = {...storedData, _rev: (storedData._rev as number) - 1};
             const failedRevValidation1 = await t.throwsAsync(store.write(wrongRevData1));
             t.true(failedRevValidation1.message.startsWith(`"${store.file}" has been updated by another process`));
-            const wrongRevData2 = {...storedData, _rev: storedData._rev + 1};
+            const wrongRevData2 = {...storedData, _rev: (storedData._rev as number) + 1};
             const failedRevValidation2 = await t.throwsAsync(store.write(wrongRevData2));
             t.true(failedRevValidation2.message.startsWith(`"${store.file}" has been updated by another process`));
 
@@ -262,7 +262,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
 
             data = {...updatedData, accounts: [...updatedData.accounts, {login: "login2"}]};
             await store.write(data);
-            t.deepEqual(await store.read(), {...data, _rev: updatedData._rev + 1});
+            t.deepEqual(await store.read(), {...data, _rev: (updatedData._rev as number) + 1});
             t.is(uniqueLoginValidatorSpy.callCount, 11);
             t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
 

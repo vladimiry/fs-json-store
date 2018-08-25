@@ -1,6 +1,6 @@
 {
   "name": "fs-json-store",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Node.js module for storing JSON data on the file system",
   "author": "Vladimir Yakovlev <dev.vladimir.y@gmail.com> (https://github.com/vladimiry)",
   "license": "MIT",
@@ -58,8 +58,8 @@
     "ts-node": "^7.0.0",
     "tsconfig-paths": "^3.4.2",
     "tslint": "^5.10.0",
-    "tslint-rules-bunch": "^0.0.4",
-    "typescript": "^2.9.2"
+    "tslint-rules-bunch": "^0.0.5",
+    "typescript": "^3.0.1"
   },
   "dependencies": {
     "combine-errors": "^3.0.3",

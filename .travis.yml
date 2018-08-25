@@ -2,17 +2,17 @@
 
 if: tag IS blank
 os:
-  - linux
-  - osx
+- linux
+- osx
 sudo: false
 language: node_js
 node_js:
-  - "8"
-  - "10"
+- "8"
+- "10"
 install:
-  - yarn install
+- yarn install
 script:
-  - node --version
-  - npm --version
-  - yarn --version
-  - yarn run dist
+- node --version
+- npm --version
+- yarn --version
+- yarn run dist
