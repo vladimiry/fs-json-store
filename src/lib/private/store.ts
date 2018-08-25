@@ -8,6 +8,7 @@ import {fs as defaultFs} from "./fs-impl/fs/index";
 import {FS_ERROR_CODE_EEXIST, FS_ERROR_CODE_ENOENT, MKDIR_MODE} from "./constants";
 import {NAME as MEMFS_NAME} from "./fs-impl/mem-fs";
 import {StoreFsReference} from "./model";
+import {TODO} from "./types";
 
 export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
     private readonly options: Model.StoreOptions<E>;
@@ -217,7 +218,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         }
     }
 
-    protected callbackifiedFsImpl(): Record<keyof StoreFsReference, (...params: any[]) => void> {
+    protected callbackifiedFsImpl(): Record<keyof StoreFsReference, (...params: TODO[]) => void> {
         if (this.fs._name === MEMFS_NAME) {
             return this.fs._impl;
         }
@@ -230,6 +231,6 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
             .reduce((accumulator, key) => {
                 accumulator[key] = callbackify(this.fs._impl[key]);
                 return accumulator;
-            }, {} as any);
+            }, {} as TODO);
     }
 }

@@ -12,6 +12,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUnusedParameters": true,
     "strictPropertyInitialization": false,
+    "strictNullChecks": true,
     "importHelpers": true,
     "noEmitOnError": true,
     "declaration": true,

@@ -6,12 +6,13 @@ import * as Model from "./model";
 import {FS_ERROR_CODE_ENOENT} from "../constants";
 import {WriteFileOptions} from "../fs-write-model";
 import {StoreFsReference} from "../model";
+import {TODO} from "../types";
 
 const DEFAULT_ATOMIC_OPTIONS: Model.WriteFileAtomicOptions = {
     fsync: false,
 };
 
-const generateTmpFileName: (file: string) => string = ((): any => {
+const generateTmpFileName: (file: string) => string = ((): TODO => {
     let getTmpFilePathInvocation = 0;
 
     return (file: string) => file + "." + imurmurhash(__filename)
@@ -24,7 +25,7 @@ const generateTmpFileName: (file: string) => string = ((): any => {
 async function writeFileAtomic(
     fs: StoreFsReference,
     filePath: PathLike /*| number*/,
-    data: any,
+    data: TODO,
     writeFileOptions?: WriteFileOptions,
     atomicOptionsInput?: Partial<Model.WriteFileAtomicOptions>,
 ): Promise<void> {

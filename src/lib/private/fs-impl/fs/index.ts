@@ -4,6 +4,7 @@ import {instantiate, Model as FsNoEpermAnymoreModel} from "fs-no-eperm-anymore";
 import {StoreFs} from "../../model";
 import {WriteFileOptions} from "../../fs-write-model";
 import {Model as WriteFileAtomicModel, writeFileAtomic} from "../../write-file-atomic/index";
+import {TODO} from "../../types";
 
 // keep definition on file top
 export const NAME = "internal.fs-no-eperm-anymore";
@@ -42,7 +43,7 @@ export function volume(volumeOptions?: {
         rename: impl.rename,
         stat: impl.stat,
         writeFile: impl.writeFile,
-        writeFileAtomic(path: PathLike /*| number*/, data: any, writeFileOptions?: WriteFileOptions): Promise<void> {
+        writeFileAtomic(path: PathLike /*| number*/, data: TODO, writeFileOptions?: WriteFileOptions): Promise<void> {
             return writeFileAtomic(impl, path, data, writeFileOptions, volumeOptions && volumeOptions.writeFileAtomicOptions);
         },
         unlink: impl.unlink,

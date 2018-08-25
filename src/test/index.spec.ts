@@ -2,12 +2,14 @@ import kindOf from "kind-of";
 import path from "path";
 import randomstring from "randomstring";
 import sinon from "sinon";
-import {ExecutionContext, test} from "ava";
+import test, {ExecutionContext} from "ava";
 
 import {Fs, Model, Store} from "dist";
+// tslint:disable-next-line:no-import-zones
+import {TODO} from "../lib/private/types";
 
 interface StoredObject extends Partial<Model.StoreEntity> {
-    data: any;
+    data: TODO;
 }
 
 const defaultFs = Fs.Fs.fs;
@@ -48,7 +50,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
 
         t.false(await store.readable());
         t.is(await store.read(), null);
-        const error = await t.throws(store.readExisting());
+        const error = await t.throwsAsync(store.readExisting());
         t.is(error.message, `${store.file} does not exist`);
         t.true(spies.adapter.read.notCalled);
         t.true(spies.adapter.write.notCalled);
@@ -95,7 +97,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
             t.false(await store.readable());
 
             if (store2) {
-                await t.throws(store2.remove());
+                await t.throwsAsync(store2.remove());
             }
         }
     });
@@ -105,7 +107,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
         let store2: Store<StoredObject> | undefined;
 
         try {
-            const invalidDataItems: any[] = [
+            const invalidDataItems: TODO[] = [
                 undefined,
                 null,
                 true,
@@ -122,7 +124,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
                 // tslint:enable:no-empty
             ];
             invalidDataItems.forEach(async (dataItem) => {
-                const dataTypeError = await t.throws(store.write(dataItem));
+                const dataTypeError = await t.throwsAsync(store.write(dataItem));
                 t.true(dataTypeError.message.indexOf(`while passed for writing data is of the "${kindOf(dataItem)}" type.`) !== -1);
             });
 
@@ -136,10 +138,10 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
             t.deepEqual(storedData, expectedData);
 
             const wrongRevData1 = {...storedData, _rev: storedData._rev - 1};
-            const failedRevValidation1 = await t.throws(store.write(wrongRevData1));
+            const failedRevValidation1 = await t.throwsAsync(store.write(wrongRevData1));
             t.true(failedRevValidation1.message.startsWith(`"${store.file}" has been updated by another process`));
             const wrongRevData2 = {...storedData, _rev: storedData._rev + 1};
-            const failedRevValidation2 = await t.throws(store.write(wrongRevData2));
+            const failedRevValidation2 = await t.throwsAsync(store.write(wrongRevData2));
             t.true(failedRevValidation2.message.startsWith(`"${store.file}" has been updated by another process`));
 
             store2 = store.clone({optimisticLocking: false});
@@ -152,7 +154,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
             t.false(await store.readable());
 
             if (store2) {
-                await t.throws(store2.remove());
+                await t.throwsAsync(store2.remove());
             }
         }
     });
@@ -252,7 +254,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
             t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
 
             data = {...updatedData, accounts: [...updatedData.accounts, {login}]};
-            const validationError = await t.throws(store.write(data));
+            const validationError = await t.throwsAsync(store.write(data));
             t.true(validationError.message.indexOf(`Duplicate accounts identified. Duplicated logins: ${login}.`) !== -1);
             t.deepEqual(await store.read(), updatedData);
             t.is(uniqueLoginValidatorSpy.callCount, 7);

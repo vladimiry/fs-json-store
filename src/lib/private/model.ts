@@ -2,6 +2,7 @@ import {NAME as FS_NAME} from "./fs-impl/fs";
 import {NAME as MEMFS_NAME} from "./fs-impl/mem-fs";
 import {STORE_FS_METHODS} from "./constants";
 import {WriteFile, WriteFileAtomic} from "./fs-write-model";
+import {TODO} from "./types";
 
 export interface Store<E extends StoreEntity> extends StoreOptions<E> {
     clone(opts?: Partial<StoreOptions<E>>): Store<E>;
@@ -50,5 +51,5 @@ export type StoreFsReference = typeof STORE_FS_METHODS & WriteFile;
 export type StoreFs =
     StoreFsReference
     & WriteFileAtomic
-    & { _impl: any; }
+    & { _impl: TODO; }
     & { _name: typeof MEMFS_NAME | typeof FS_NAME | string; };
