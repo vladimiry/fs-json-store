@@ -4,10 +4,10 @@ import properLockfile from "proper-lockfile";
 import {callbackify} from "util";
 
 import * as Model from "./model";
+import {StoreFsReference} from "./model";
 import {fs as defaultFs} from "./fs-impl/fs/index";
 import {FS_ERROR_CODE_EEXIST, FS_ERROR_CODE_ENOENT, MKDIR_MODE} from "./constants";
 import {NAME as MEMFS_NAME} from "./fs-impl/mem-fs";
-import {StoreFsReference} from "./model";
 import {TODO} from "./types";
 
 export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
@@ -37,7 +37,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         return this.options.validators;
     }
 
-    public clone(opts?: Partial<Model.StoreOptions<E>>) {
+    public clone(opts?: Partial<Model.StoreOptions<E>>): Store<E> {
         return new Store<E>({
             ...this.options,
             ...opts,
@@ -46,7 +46,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         });
     }
 
-    public async readable() {
+    public async readable(): Promise<boolean> {
         let fd: number;
 
         try {
@@ -63,7 +63,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         return true;
     }
 
-    public async readExisting(options?: { adapter?: Model.StoreAdapter }) {
+    public async readExisting(options?: { adapter?: Model.StoreAdapter }): Promise<E> {
         const response = await this.read(options);
 
         if (!response) {
@@ -73,7 +73,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         return response;
     }
 
-    public async read(options?: { adapter?: Model.StoreAdapter }) {
+    public async read(options?: { adapter?: Model.StoreAdapter }): Promise<E | null> {
         const readable = await this.readable();
 
         if (!readable) {
@@ -90,7 +90,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         return data;
     }
 
-    public async write(data: E, options?: { readAdapter?: Model.StoreAdapter }) {
+    public async write(data: E, options?: { readAdapter?: Model.StoreAdapter }): Promise<E> {
         const dataType = kindOf(data);
         const dir = path.dirname(this.file);
 
@@ -138,7 +138,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         return await finalAction(data);
     }
 
-    public async validate(data: E, messagePrefix?: string) {
+    public async validate(data: E, messagePrefix?: string): Promise<void> {
         if (!this.validators || !this.validators.length) {
             return;
         }
@@ -152,33 +152,35 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         }
     }
 
-    public async remove() {
+    public async remove(): Promise<void> {
         await this.fs.unlink(this.file);
     }
 
     protected async resolveNewRevision(payloadData: E, readAdapter?: Model.StoreAdapter): Promise<number> {
-        const {_rev} = payloadData;
+        const {_rev: payloadRev} = payloadData;
         const storedData = await this.read({adapter: readAdapter});
 
         if (!storedData) {
-            return typeof _rev === "number" ? _rev : 0;
+            return typeof payloadRev === "number" ? payloadRev : 0;
         }
 
-        const storedDataVersioned = typeof storedData._rev === "number";
-        const payloadDataVersioned = typeof _rev === "number";
+        const {_rev: storedRev} = storedData;
+        // TODO TS doesn't understand constant based "typeof" type guards
+        const payloadDataVersioned = typeof payloadRev === "number";
+        const storedDataVersioned = typeof storedRev === "number";
 
         if (!storedDataVersioned && payloadDataVersioned) {
-            throw new Error(`Version value (${_rev}) can't be passed for updating not yet versioned file "${this.file}"`);
+            throw new Error(`Version value (${payloadRev}) can't be passed for updating unversioned file "${this.file}"`);
         }
 
-        if (!storedDataVersioned || !payloadDataVersioned || storedData._rev !== _rev) {
+        if (!storedDataVersioned || typeof payloadRev !== "number" || storedRev !== payloadRev) {
             throw new Error([
                 `"${this.file}" has been updated by another process. `,
-                `Revisions of the persisted (${storedData._rev}) and payload (${_rev}) data don't match`,
+                `Revisions of the persisted (${storedRev}) and payload (${payloadRev}) data don't match`,
             ].join(""));
         }
 
-        return storedData._rev + 1;
+        return storedRev + 1;
     }
 
     protected async mkdirRecursive(value: string) {
