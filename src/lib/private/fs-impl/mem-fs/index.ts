@@ -2,6 +2,7 @@ import {createFsFromVolume, Volume} from "memfs";
 import {promisify} from "util";
 
 import {StoreFs} from "../../model";
+import {TODO} from "../../types";
 
 // keep definition on file top
 export const NAME = "internal.memfs";
@@ -16,13 +17,13 @@ export function volume(): StoreFs {
         chmod: promisify(impl.chmod),
         chown: promisify(impl.chown),
         mkdir: promisify(impl.mkdir),
-        open: promisify(impl.open),
+        open: promisify(impl.open) as TODO,
         close: promisify(impl.close),
         fsync: promisify(impl.fsync),
-        readFile: promisify(impl.readFile),
-        realpath: promisify(impl.realpath),
+        readFile: promisify(impl.readFile) as TODO,
+        realpath: promisify(impl.realpath) as TODO,
         rename: promisify(impl.rename),
-        stat: promisify(impl.stat),
+        stat: promisify(impl.stat) as TODO,
         writeFile: promisify(impl.writeFile),
         writeFileAtomic: promisify(impl.writeFile),
         unlink: promisify(impl.unlink),

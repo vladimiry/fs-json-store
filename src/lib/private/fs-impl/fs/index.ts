@@ -1,4 +1,4 @@
-import {PathLike} from "fs";
+import baseFs, {PathLike} from "fs";
 import {instantiate, Model as FsNoEpermAnymoreModel} from "fs-no-eperm-anymore";
 
 import {StoreFs} from "../../model";
@@ -30,7 +30,7 @@ export function volume(volumeOptions?: {
     const impl = instantiate(instanceOptions);
 
     return {
-        _impl: impl,
+        _impl: {...baseFs, ...impl},
         _name: NAME,
         chmod: impl.chmod,
         chown: impl.chown,

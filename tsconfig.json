@@ -18,6 +18,8 @@
     "declaration": true,
     "sourceMap": true,
     "lib": [
+      "esnext",
+      "dom",
       "es2015",
       "es2016.array.include"
     ],
