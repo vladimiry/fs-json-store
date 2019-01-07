@@ -36,7 +36,11 @@ export interface StoreOptionsBase<E extends StoreEntity> {
 
 export type StoreOptions<E extends StoreEntity> = StoreOptionsBase<E> & { readonly fs: StoreFs; };
 
-export type StoreOptionsInput<E extends StoreEntity> = StoreOptionsBase<E> & { readonly fs?: StoreFs; };
+export type StoreOptionsInput<E extends StoreEntity> = StoreOptionsBase<E> & {
+    readonly fs?: StoreFs;
+    readonly serialize?: (data: E) => Uint8Array | Buffer;
+    readonly deserialize?: (data: Uint8Array | Buffer) => E;
+};
 
 export interface StoreAdapter {
     write(data: Buffer): Promise<Buffer>;

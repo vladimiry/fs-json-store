@@ -12,9 +12,13 @@ import {TODO} from "./types";
 
 export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
     private readonly options: Model.StoreOptions<E>;
+    private readonly serialize: Required<Model.StoreOptionsInput<E>>["serialize"];
+    private readonly deserialize: Required<Model.StoreOptionsInput<E>>["deserialize"];
 
     constructor(options: Model.StoreOptionsInput<E>) {
         this.options = Object.freeze({...options, fs: options.fs || defaultFs});
+        this.serialize = options.serialize || ((data: E) => Buffer.from(JSON.stringify(data)));
+        this.deserialize = options.deserialize || ((data: Uint8Array | Buffer) => JSON.parse(Buffer.from(data).toString()));
     }
 
     get adapter(): Model.StoreAdapter | undefined {
@@ -83,7 +87,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         const buffer = await this.fs.readFile(this.file);
         const adapter = (options && options.adapter) || this.adapter;
         const adaptedBuffer = adapter ? await adapter.read(buffer) : buffer;
-        const data = JSON.parse(adaptedBuffer.toString());
+        const data = this.deserialize(adaptedBuffer);
 
         await this.validate(data, "Reading validation: ");
 
@@ -116,7 +120,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         }
 
         const finalAction = async (dataToSave: E) => {
-            const buffer = Buffer.from(JSON.stringify(dataToSave, null, 4));
+            const buffer = Buffer.from(this.serialize(dataToSave));
             const adaptedBuffer = this.adapter ? await this.adapter.write(buffer) : buffer;
 
             await this.fs.writeFileAtomic(this.file, adaptedBuffer);
