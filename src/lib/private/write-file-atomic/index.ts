@@ -59,8 +59,12 @@ async function writeFileAtomic(
         }
 
         if (fileStats) {
-            await fs.chown(resultFile, fileStats.uid, fileStats.gid);
-            await fs.chmod(resultFile, fileStats.mode);
+            if (!atomicOptions.disableChown) {
+                await fs.chown(resultFile, fileStats.uid, fileStats.gid);
+            }
+            if (!atomicOptions.disableChmod) {
+                await fs.chmod(resultFile, fileStats.mode);
+            }
         }
 
         return resultFile;

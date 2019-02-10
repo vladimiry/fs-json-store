@@ -15,8 +15,8 @@ const DEFAULT_FS_NO_EPERM_ANYMORE_OPTIONS: FsNoEpermAnymoreModel.Options = {
             platforms: ["win32"],
             errorCodes: ["EPERM", "EBUSY"],
             options: {
-                retryIntervalMs: 100,
-                retryTimeoutMs: 10 * 1000,
+                retryIntervalMs: 100, // every 100 ms
+                retryTimeoutMs: 5 * 1000, // 5 seconds
             },
         },
     ],
@@ -43,8 +43,18 @@ export function volume(volumeOptions?: {
         rename: impl.rename,
         stat: impl.stat,
         writeFile: impl.writeFile,
-        writeFileAtomic(path: PathLike /*| number*/, data: TODO, writeFileOptions?: WriteFileOptions): Promise<void> {
-            return writeFileAtomic(impl, path, data, writeFileOptions, volumeOptions && volumeOptions.writeFileAtomicOptions);
+        writeFileAtomic(
+            path: PathLike /*| number*/,
+            data: TODO,
+            writeFileOptions?: WriteFileOptions,
+        ): Promise<void> {
+            return writeFileAtomic(
+                impl,
+                path,
+                data,
+                writeFileOptions,
+                volumeOptions && volumeOptions.writeFileAtomicOptions,
+            );
         },
         unlink: impl.unlink,
     };
