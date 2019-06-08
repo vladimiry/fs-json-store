@@ -2,17 +2,23 @@
 
 if: tag IS blank
 os:
-- linux
-- osx
+  - linux
+  - osx
 sudo: false
 language: node_js
 node_js:
-- "8"
-- "10"
+  - "8"
+  - "10"
+  - "lts/*"
+before_install:
+  - | # installing the most recent yarn version
+    curl -o- -L https://yarnpkg.com/install.sh | bash;
+    export PATH="$HOME/.yarn/bin:$PATH";
 install:
-- yarn install
+  - yarn install
 script:
-- node --version
-- npm --version
-- yarn --version
-- yarn run dist
+  - node --version
+  - npm --version
+  - yarn --version
+  - npx envinfo
+  - yarn run lib

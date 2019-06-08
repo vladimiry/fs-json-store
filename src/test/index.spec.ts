@@ -4,9 +4,9 @@ import randomstring from "randomstring";
 import sinon from "sinon";
 import test, {ExecutionContext} from "ava";
 
-import {Fs, Model, Store} from "dist";
+import {Fs, Model, Store} from "lib";
 // tslint:disable-next-line:no-import-zones
-import {TODO} from "../lib/private/types";
+import {TODO} from "lib/private/types";
 
 interface StoredObject extends Partial<Model.StoreEntity> {
     data: TODO;
@@ -36,10 +36,10 @@ run(memFsVolume, {
     outputPath: process.cwd(),
 });
 
-run(defaultFs, {
-    fsName: defaultFs._name,
-    outputPath: path.join(process.cwd(), "./output/test"),
-});
+// run(defaultFs, {
+//     fsName: defaultFs._name,
+//     outputPath: path.join(process.cwd(), "./output/test"),
+// });
 
 function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
     test(`${opts.fsName}: read/write/remove`, async (t) => {
@@ -56,49 +56,47 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
         t.true(spies.adapter.write.notCalled);
         t.true(spies.validator.notCalled);
 
-        try {
-            // initial
-            let data = {data: {value1: {random: Number(new Date())}, value2: {random: Number(new Date())}}};
-            let dataDump = JSON.stringify(data);
-            let storedData = await store.write(data);
-            t.is(JSON.stringify(data), dataDump, "making sure data parameter has not been mutated");
-            let expectedData = {...data, _rev: 0};
-            t.deepEqual(storedData, expectedData);
-            t.deepEqual(await store.readExisting(), expectedData);
-            t.is(spies.adapter.write.callCount, 1);
-            t.is(spies.adapter.read.callCount, 2);
-            t.is(spies.validator.callCount, 3);
+        // initial
+        let data = {data: {value1: {random: Number(new Date())}, value2: {random: Number(new Date())}}};
+        let dataDump = JSON.stringify(data);
+        let storedData = await store.write(data);
+        t.is(JSON.stringify(data), dataDump, "making sure data parameter has not been mutated");
+        let expectedData = {...data, _rev: 0};
+        t.deepEqual(storedData, expectedData);
+        t.deepEqual(await store.readExisting(), expectedData);
+        t.is(spies.adapter.write.callCount, 1);
+        t.is(spies.adapter.read.callCount, 2);
+        t.is(spies.validator.callCount, 3);
 
-            // update
-            data = {...storedData, data: {value3: {random: Number(new Date())}, value4: {random: Number(new Date())}}} as TODO;
-            dataDump = JSON.stringify(data);
-            expectedData = {...data, _rev: (storedData._rev as number) + 1};
-            storedData = await store.write(data);
-            t.is(JSON.stringify(data), dataDump, "making sure data parameter has not been mutated");
-            t.deepEqual(storedData, expectedData);
-            t.deepEqual(await store.readExisting(), expectedData);
-            t.is(spies.adapter.write.callCount, 2);
-            t.is(spies.adapter.read.callCount, 5);
-            t.is(spies.validator.callCount, 7);
+        // update
+        data = {...storedData, data: {value3: {random: Number(new Date())}, value4: {random: Number(new Date())}}} as TODO;
+        dataDump = JSON.stringify(data);
+        expectedData = {...data, _rev: (storedData._rev as number) + 1};
+        storedData = await store.write(data);
+        t.is(JSON.stringify(data), dataDump, "making sure data parameter has not been mutated");
+        t.deepEqual(storedData, expectedData);
+        t.deepEqual(await store.readExisting(), expectedData);
+        t.is(spies.adapter.write.callCount, 2);
+        t.is(spies.adapter.read.callCount, 5);
+        t.is(spies.validator.callCount, 7);
 
-            // without adapter
-            store2 = store.clone({adapter: undefined});
-            t.falsy(store2.adapter);
-            data = {...storedData, data: {value5: {random: Number(new Date())}}} as TODO;
-            expectedData = {...data, _rev: (storedData._rev as number) + 1};
-            storedData = await store2.write(data);
-            t.deepEqual(storedData, expectedData);
-            t.deepEqual(await store2.readExisting(), expectedData);
-            t.is(spies.adapter.write.callCount, 2); // remains unchanged
-            t.is(spies.adapter.read.callCount, 5); // remains unchanged
-            t.is(spies.validator.callCount, 11);
-        } finally {
-            await store.remove();
-            t.false(await store.readable());
+        // without adapter
+        store2 = store.clone({adapter: undefined});
+        t.falsy(store2.adapter);
+        data = {...storedData, data: {value5: {random: Number(new Date())}}} as TODO;
+        expectedData = {...data, _rev: (storedData._rev as number) + 1};
+        storedData = await store2.write(data);
+        t.deepEqual(storedData, expectedData);
+        t.deepEqual(await store2.readExisting(), expectedData);
+        t.is(spies.adapter.write.callCount, 2); // remains unchanged
+        t.is(spies.adapter.read.callCount, 5); // remains unchanged
+        t.is(spies.validator.callCount, 11);
 
-            if (store2) {
-                await t.throwsAsync(store2.remove());
-            }
+        await store.remove();
+        t.false(await store.readable());
+        if (await store2.readable()) {
+            await store2.remove();
+            t.false(await store2.readable());
         }
     });
 
@@ -106,57 +104,53 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
         const {store} = buildStore(t);
         let store2: Store<StoredObject> | undefined;
 
-        try {
-            const invalidDataItems: TODO[] = [
-                undefined,
-                null,
-                true,
-                false,
-                new Buffer(""),
-                42,
-                "str",
-                new Date(),
-                [1, 2, 3],
-                /foo/,
-                // tslint:disable:no-empty
-                () => {
-                },
-                // tslint:enable:no-empty
-            ];
-            invalidDataItems.forEach(async (dataItem) => {
-                const dataTypeError = await t.throwsAsync(store.write(dataItem));
-                t.true(dataTypeError.message.indexOf(`while passed for writing data is of the "${kindOf(dataItem)}" type.`) !== -1);
-            });
+        const invalidDataItems: TODO[] = [
+            undefined,
+            null,
+            true,
+            false,
+            new Buffer(""),
+            42,
+            "str",
+            new Date(),
+            [1, 2, 3],
+            /foo/,
+            // tslint:disable:no-empty
+            () => {
+            },
+            // tslint:enable:no-empty
+        ];
+        invalidDataItems.forEach(async (dataItem) => {
+            const dataTypeError = await t.throwsAsync(store.write(dataItem));
+            t.true(dataTypeError.message.indexOf(`while passed for writing data is of the "${kindOf(dataItem)}" type.`) !== -1);
+        });
 
-            const data = {_rev: 123, data: {value1: {random: Number(new Date())}, value2: {random: Number(new Date())}}};
-            let storedData = await store.write(data);
-            let expectedData = data;
-            t.deepEqual(storedData, expectedData);
+        const data = {_rev: 123, data: {value1: {random: Number(new Date())}, value2: {random: Number(new Date())}}};
+        let storedData = await store.write(data);
+        let expectedData = data;
+        t.deepEqual(storedData, expectedData);
 
-            expectedData = {...storedData, _rev: (storedData._rev as number) + 1};
-            storedData = await store.write(storedData);
-            t.deepEqual(storedData, expectedData);
+        expectedData = {...storedData, _rev: (storedData._rev as number) + 1};
+        storedData = await store.write(storedData);
+        t.deepEqual(storedData, expectedData);
 
-            const wrongRevData1 = {...storedData, _rev: (storedData._rev as number) - 1};
-            const failedRevValidation1 = await t.throwsAsync(store.write(wrongRevData1));
-            t.true(failedRevValidation1.message.startsWith(`"${store.file}" has been updated by another process`));
-            const wrongRevData2 = {...storedData, _rev: (storedData._rev as number) + 1};
-            const failedRevValidation2 = await t.throwsAsync(store.write(wrongRevData2));
-            t.true(failedRevValidation2.message.startsWith(`"${store.file}" has been updated by another process`));
+        const wrongRevData1 = {...storedData, _rev: (storedData._rev as number) - 1};
+        const failedRevValidation1 = await t.throwsAsync(store.write(wrongRevData1));
+        t.true(failedRevValidation1.message.startsWith(`"${store.file}" has been updated by another process`));
+        const wrongRevData2 = {...storedData, _rev: (storedData._rev as number) + 1};
+        const failedRevValidation2 = await t.throwsAsync(store.write(wrongRevData2));
+        t.true(failedRevValidation2.message.startsWith(`"${store.file}" has been updated by another process`));
 
-            store2 = store.clone({optimisticLocking: false});
-            storedData = await store2.write(wrongRevData1);
-            t.deepEqual(storedData, wrongRevData1);
-            storedData = await store2.write(wrongRevData2);
-            t.deepEqual(storedData, wrongRevData2);
-        } finally {
-            await store.remove();
-            t.false(await store.readable());
+        store2 = store.clone({optimisticLocking: false});
+        storedData = await store2.write(wrongRevData1);
+        t.deepEqual(storedData, wrongRevData1);
+        storedData = await store2.write(wrongRevData2);
+        t.deepEqual(storedData, wrongRevData2);
 
-            if (store2) {
-                await t.throwsAsync(store2.remove());
-            }
-        }
+        await store.remove();
+        t.false(await store.readable());
+        await t.throwsAsync(store2.remove());
+        t.false(await store2.readable());
     });
 
     test(`${opts.fsName}: clone`, (t) => {
@@ -242,34 +236,31 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
 
         t.is(store.validators && store.validators[0], uniqueLoginValidator);
 
-        try {
-            let data: Accounts = {accounts: []};
-            let updatedData = await store.write(data);
-            t.is(uniqueLoginValidatorSpy.callCount, 2);
-            t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
+        let data: Accounts = {accounts: []};
+        let updatedData = await store.write(data);
+        t.is(uniqueLoginValidatorSpy.callCount, 2);
+        t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
 
-            data = {...updatedData, accounts: [...updatedData.accounts, {login}]};
-            updatedData = await store.write(data);
-            t.is(uniqueLoginValidatorSpy.callCount, 5);
-            t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
+        data = {...updatedData, accounts: [...updatedData.accounts, {login}]};
+        updatedData = await store.write(data);
+        t.is(uniqueLoginValidatorSpy.callCount, 5);
+        t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
 
-            data = {...updatedData, accounts: [...updatedData.accounts, {login}]};
-            const validationError = await t.throwsAsync(store.write(data));
-            t.true(validationError.message.indexOf(`Duplicate accounts identified. Duplicated logins: ${login}.`) !== -1);
-            t.deepEqual(await store.read(), updatedData);
-            t.is(uniqueLoginValidatorSpy.callCount, 7);
-            t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
+        data = {...updatedData, accounts: [...updatedData.accounts, {login}]};
+        const validationError = await t.throwsAsync(store.write(data));
+        t.true(validationError.message.indexOf(`Duplicate accounts identified. Duplicated logins: ${login}.`) !== -1);
+        t.deepEqual(await store.read(), updatedData);
+        t.is(uniqueLoginValidatorSpy.callCount, 7);
+        t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
 
-            data = {...updatedData, accounts: [...updatedData.accounts, {login: "login2"}]};
-            await store.write(data);
-            t.deepEqual(await store.read(), {...data, _rev: (updatedData._rev as number) + 1});
-            t.is(uniqueLoginValidatorSpy.callCount, 11);
-            t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
+        data = {...updatedData, accounts: [...updatedData.accounts, {login: "login2"}]};
+        await store.write(data);
+        t.deepEqual(await store.read(), {...data, _rev: (updatedData._rev as number) + 1});
+        t.is(uniqueLoginValidatorSpy.callCount, 11);
+        t.true(uniqueLoginValidatorSpy.calledWithExactly(data));
 
-        } finally {
-            await store.remove();
-            t.false(await store.readable());
-        }
+        await store.remove();
+        t.false(await store.readable());
     });
 
     // TODO test concurrent writing

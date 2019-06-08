@@ -24,7 +24,7 @@
       "es2016.array.include"
     ],
     "baseUrl": ".",
-    "outDir": "./dist",
+    "outDir": "./lib",
     "typeRoots": [
       "./node_modules/@types",
       "./src/@types"
