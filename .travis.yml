@@ -7,8 +7,8 @@ os:
 sudo: false
 language: node_js
 node_js:
-  - "8"
   - "10"
+  - "12"
   - "lts/*"
 before_install:
   - | # installing the most recent yarn version
