@@ -105,8 +105,6 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
             ].join(""));
         }
 
-        data = Object.freeze(data);
-
         await this.validate(data, "Writing validation: ");
 
         try {
