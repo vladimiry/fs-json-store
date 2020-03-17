@@ -3,6 +3,7 @@
     "tslint:recommended"
   ],
   "rules": {
+    "array-type": [true, "array-simple"],
     "max-line-length": [
       true,
       140

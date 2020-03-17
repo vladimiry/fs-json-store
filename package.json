@@ -27,7 +27,7 @@
     "lint:lib": "tslint -p ./src/lib/tsconfig.json -c ./tslint.json \"./src/{lib,@types}/**/*.ts\"",
     "lint:test": "tslint -p ./src/test/tsconfig.json -c ./src/test/tslint.json \"./src/test/**/*.ts\"",
     "lint": "npm-run-all lint:lib lint:test",
-    "test": "cross-env TS_NODE_FILES=true TS_NODE_PROJECT=./src/test/tsconfig.json npx --no-install --node-arg=\"-r tsconfig-paths/register -r ts-node/register\" ava \"./src/test/**/*.spec.ts\""
+    "test": "cross-env TS_NODE_PROJECT=./src/test/tsconfig.json ava"
   },
   "pre-commit": [
     "lint"
@@ -39,33 +39,36 @@
     "files": [
       "./src/test/**/*.{spec,test}.ts"
     ],
+    "require": [
+      "ts-node/register"
+    ],
     "verbose": true
   },
   "devDependencies": {
+    "@types/imurmurhash": "0.1.0",
     "@types/kind-of": "^6.0.0",
-    "@types/node": "^13.1.8",
+    "@types/node": "^13.9.1",
     "@types/proper-lockfile": "^4.1.0",
     "@types/randomstring": "^1.1.6",
-    "@types/sinon": "^7.5.1",
-    "ava": "^3.0.0",
-    "cross-env": "^6.0.3",
+    "@types/sinon": "^7.5.2",
+    "ava": "^3.5.0",
+    "cross-env": "^7.0.2",
     "npm-run-all": "^4.1.5",
     "randomstring": "^1.1.5",
-    "rimraf": "^3.0.0",
-    "sinon": "^8.1.0",
+    "rimraf": "^3.0.2",
+    "sinon": "^9.0.1",
     "ts-node": "^8.6.2",
-    "tsconfig-paths": "^3.9.0",
-    "tslint": "^5.20.1",
-    "tslint-rules-bunch": "^0.0.8",
-    "typescript": "^3.7.5"
+    "tslint": "^6.1.0",
+    "tslint-rules-bunch": "^1.0.0",
+    "typescript": "^3.8.3"
   },
   "dependencies": {
     "combine-errors": "^3.0.3",
-    "fs-no-eperm-anymore": "^3.0.1",
+    "fs-no-eperm-anymore": "^4.0.0",
     "imurmurhash": "^0.1.4",
     "kind-of": "^6.0.3",
-    "memfs": "^3.0.4",
+    "memfs": "^3.1.2",
     "proper-lockfile": "^3.2.0",
-    "tslib": "^1.9.3"
+    "tslib": "^1.11.1"
   }
 }

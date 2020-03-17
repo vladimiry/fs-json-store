@@ -4,9 +4,9 @@ import randomstring from "randomstring";
 import sinon from "sinon";
 import test, {ExecutionContext} from "ava";
 
-import {Fs, Model, Store} from "lib";
+import {Fs, Model, Store} from "../lib";
 // tslint:disable-next-line:no-import-zones
-import {TODO} from "lib/private/types";
+import {TODO} from "../lib/private/types";
 
 interface StoredObject extends Partial<Model.StoreEntity> {
     data: TODO;

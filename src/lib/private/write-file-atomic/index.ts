@@ -18,7 +18,7 @@ const generateTmpFileName: (file: string) => string = ((): TODO => {
     return (file: string) => file + "." + imurmurhash(__filename)
         .hash(String(process.pid))
         .hash(String(++getTmpFilePathInvocation))
-        .hash(Number(new Date()))
+        .hash(String(Date.now()))
         .result();
 })();
 
