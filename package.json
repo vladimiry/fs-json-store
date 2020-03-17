@@ -1,6 +1,6 @@
 {
   "name": "fs-json-store",
-  "version": "2.3.3",
+  "version": "3.0.0",
   "description": "Node.js module for storing JSON data on the file system",
   "author": "Vladimir Yakovlev <dev.vladimir.y@gmail.com> (https://github.com/vladimiry)",
   "license": "MIT",
@@ -16,7 +16,7 @@
     "store"
   ],
   "engines": {
-    "node": ">=8.9.4 <9 || >=10.0.0"
+    "node": ">=10 <11 || >=12"
   },
   "main": "./lib/index.js",
   "scripts": {

@@ -9,7 +9,7 @@ language: node_js
 node_js:
   - "10"
   - "12"
-  - "lts/*"
+  - "13"
 before_install:
   - | # installing the most recent yarn version
     curl -o- -L https://yarnpkg.com/install.sh | bash;
