@@ -16,7 +16,7 @@ export function volume(): StoreFs {
         _name: NAME,
         chmod: promisify(impl.chmod),
         chown: promisify(impl.chown),
-        mkdir: promisify(impl.mkdir),
+        mkdir: promisify(impl.mkdir) as TODO,
         open: promisify(impl.open) as TODO,
         close: promisify(impl.close),
         fsync: promisify(impl.fsync),
