@@ -23,7 +23,7 @@ const generateTmpFileName: (file: string) => string = ((): TODO => {
 })();
 
 async function writeFileAtomic(
-    fs: StoreFsReference,
+    fs: Pick<StoreFsReference, "stat" | "realpath" | "open" | "writeFile" | "fsync" | "close" | "chown" | "chmod" | "rename" | "unlink">,
     filePath: PathLike,
     data: TODO,
     writeFileOptions?: WriteFileOptions,
