@@ -1,4 +1,4 @@
-import {PathLike} from "fs";
+import regularNodeFs, {PathLike} from "fs";
 import {instantiate, Model as FsNoEpermAnymoreModel} from "fs-no-eperm-anymore";
 
 import {StoreFs} from "../../model";
@@ -37,7 +37,7 @@ export function volume(
     );
 
     return {
-        _impl: impl,
+        _impl: {...regularNodeFs, ...impl},
         _name: NAME,
         chmod: impl.chmod,
         chown: impl.chown,
