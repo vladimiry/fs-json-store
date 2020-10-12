@@ -1,7 +1,8 @@
-import baseFs, {PathLike} from "fs";
+import {PathLike} from "fs";
 import {instantiate, Model as FsNoEpermAnymoreModel} from "fs-no-eperm-anymore";
 
 import {StoreFs} from "../../model";
+import {NoExtraProps} from "../../types";
 import {WriteFileOptions} from "../../fs-write-model";
 import {Model as WriteFileAtomicModel, writeFileAtomic} from "../../write-file-atomic/index";
 import {TODO} from "../../types";
@@ -9,7 +10,7 @@ import {TODO} from "../../types";
 // keep definition on file top
 export const NAME = "internal.fs-no-eperm-anymore";
 
-const DEFAULT_FS_NO_EPERM_ANYMORE_OPTIONS: FsNoEpermAnymoreModel.Options = {
+const defaultFsNoEpermAnymoreOptions: FsNoEpermAnymoreModel.Options = {
     items: [
         {
             platforms: ["win32"],
@@ -22,15 +23,21 @@ const DEFAULT_FS_NO_EPERM_ANYMORE_OPTIONS: FsNoEpermAnymoreModel.Options = {
     ],
 };
 
-export function volume(volumeOptions?: {
-    writeFileAtomicOptions: WriteFileAtomicModel.WriteFileAtomicOptions;
-    fsNoEpermAnymore: FsNoEpermAnymoreModel.Options;
-}): StoreFs {
-    const instanceOptions = {...DEFAULT_FS_NO_EPERM_ANYMORE_OPTIONS, ...(volumeOptions ? volumeOptions.fsNoEpermAnymore : {})};
-    const impl = instantiate(instanceOptions);
+export function volume(
+    volumeOptions?: {
+        writeFileAtomicOptions?: WriteFileAtomicModel.WriteFileAtomicOptions;
+        fsNoEpermAnymore?: FsNoEpermAnymoreModel.Options;
+    },
+): NoExtraProps<StoreFs> {
+    const impl = instantiate(
+        {
+            ...defaultFsNoEpermAnymoreOptions,
+            ...volumeOptions?.fsNoEpermAnymore,
+        },
+    );
 
     return {
-        _impl: {...baseFs, ...impl},
+        _impl: impl,
         _name: NAME,
         chmod: impl.chmod,
         chown: impl.chown,
@@ -44,7 +51,7 @@ export function volume(volumeOptions?: {
         stat: impl.stat,
         writeFile: impl.writeFile,
         writeFileAtomic(
-            path: PathLike /*| number*/,
+            path: PathLike,
             data: TODO,
             writeFileOptions?: WriteFileOptions,
         ): Promise<void> {
@@ -53,7 +60,7 @@ export function volume(volumeOptions?: {
                 path,
                 data,
                 writeFileOptions,
-                volumeOptions && volumeOptions.writeFileAtomicOptions,
+                volumeOptions?.writeFileAtomicOptions,
             );
         },
         unlink: impl.unlink,

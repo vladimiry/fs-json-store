@@ -12,40 +12,33 @@ interface StoredObject extends Partial<Model.StoreEntity> {
     data: TODO;
 }
 
-const defaultFs = Fs.Fs.fs;
-const buildMemFsVolume = Fs.MemFs.volume;
-
-test("instantiating with default options", async (t) => {
-    const options = Object.freeze({
-        file: randomstring.generate(),
-    });
-    const store = new Store(options);
-    t.is(store.file, options.file);
-    t.is(store.fs, defaultFs);
-    t.falsy(store.adapter);
-    t.false(store.optimisticLocking);
-    t.falsy(store.validators);
-});
-
-const memFsVolume = buildMemFsVolume();
-
-memFsVolume._impl.mkdirpSync(process.cwd());
-
-run(memFsVolume, {
-    fsName: memFsVolume._name,
-    outputPath: process.cwd(),
-});
-
-// run(defaultFs, {
-//     fsName: defaultFs._name,
-//     outputPath: path.join(process.cwd(), "./output/test"),
-// });
+for (const fs of [Fs.Fs.fs] as const) {
+    run(
+        fs,
+        {
+            fsName: fs._name,
+            outputPath: path.join(process.cwd(), "./output/test", String(Date.now())),
+        },
+    );
+}
 
 function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
+    test("instantiating with default options", async (t) => {
+        const options = Object.freeze({
+            file: randomstring.generate(),
+        });
+        const store = new Store(options);
+        t.is(store.file, options.file);
+        t.is(store.fs, fs);
+        t.falsy(store.adapter);
+        t.false(store.optimisticLocking);
+        t.falsy(store.validators);
+    });
+
     test(`${opts.fsName}: read/write/remove`, async (t) => {
         t.truthy(opts.fsName);
 
-        const {spies, store} = buildStore(t);
+        const {spies, store} = buildMockedStore(t);
         let store2: Store<StoredObject> | undefined;
 
         t.false(await store.readable());
@@ -101,7 +94,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
     });
 
     test(`${opts.fsName}: versioning (optimistic locking)`, async (t) => {
-        const {store} = buildStore(t);
+        const {store} = buildMockedStore(t);
         let store2: Store<StoredObject> | undefined;
 
         const invalidDataItems: TODO[] = [
@@ -120,10 +113,10 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
             },
             // tslint:enable:no-empty
         ];
-        invalidDataItems.forEach(async (dataItem) => {
+        for (const dataItem of invalidDataItems) {
             const dataTypeError = await t.throwsAsync(store.write(dataItem));
             t.true(dataTypeError.message.indexOf(`while passed for writing data is of the "${kindOf(dataItem)}" type.`) !== -1);
-        });
+        }
 
         const data = {_rev: 123, data: {value1: {random: Number(new Date())}, value2: {random: Number(new Date())}}};
         let storedData = await store.write(data);
@@ -154,7 +147,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
     });
 
     test(`${opts.fsName}: clone`, (t) => {
-        const {store} = buildStore(t);
+        const {store} = buildMockedStore(t);
 
         // copy clone
         const store2 = store.clone();
@@ -175,7 +168,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
         t.deepEqual(state, expectedState);
 
         // full clone expect "file"
-        const {options} = buildStore(t);
+        const {options} = buildMockedStore(t);
         expectedState = {...options, file: store.file};
         const store3 = store.clone(expectedState);
         state = {
@@ -196,7 +189,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
             validators: undefined,
         });
         t.falsy(store4.adapter);
-        t.is(store4.fs, defaultFs);
+        t.is(store4.fs, fs);
         t.is(store4.file, store.file, `"file" should remain filled despite of the "undefined" parameter passed`);
         t.falsy(store4.optimisticLocking);
         t.falsy(store4.validators);
@@ -229,7 +222,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
 
             return Promise.resolve(result);
         }) as Model.StoreValidator<Accounts>;
-        const {store} = buildStore<Accounts>(t, {
+        const {store} = buildMockedStore<Accounts>(t, {
             validators: [uniqueLoginValidator],
         });
         const login = "login1";
@@ -265,7 +258,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
 
     // TODO test concurrent writing
 
-    function buildStore<E extends Partial<Model.StoreEntity> = StoredObject>(
+    function buildMockedStore<E extends Partial<Model.StoreEntity> = StoredObject>(
         t: ExecutionContext,
         storeOpts?: Partial<Model.StoreOptions<E>>,
     ) {

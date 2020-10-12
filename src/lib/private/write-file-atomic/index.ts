@@ -8,8 +8,8 @@ import {WriteFileOptions} from "../fs-write-model";
 import {StoreFsReference} from "../model";
 import {TODO} from "../types";
 
-const DEFAULT_ATOMIC_OPTIONS: Model.WriteFileAtomicOptions = {
-    fsync: false,
+const defaultAtomicOptions: Model.WriteFileAtomicOptions = {
+    fsync: true,
 };
 
 const generateTmpFileName: (file: string) => string = ((): TODO => {
@@ -24,12 +24,12 @@ const generateTmpFileName: (file: string) => string = ((): TODO => {
 
 async function writeFileAtomic(
     fs: StoreFsReference,
-    filePath: PathLike /*| number*/,
+    filePath: PathLike,
     data: TODO,
     writeFileOptions?: WriteFileOptions,
     atomicOptionsInput?: Partial<Model.WriteFileAtomicOptions>,
 ): Promise<void> {
-    const atomicOptions: Model.WriteFileAtomicOptions = {...DEFAULT_ATOMIC_OPTIONS, ...atomicOptionsInput};
+    const atomicOptions: Model.WriteFileAtomicOptions = {...defaultAtomicOptions, ...atomicOptionsInput};
     const file = filePath.toString();
 
     // in order to reduce the same file locking probability renaming occurs in serial mode using "queue" approach

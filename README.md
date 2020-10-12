@@ -9,7 +9,7 @@ Module simply serializes/deserializes a file using `JSON.stringify / JSON.parse`
 ## Features
 
 - Atomic writing. Means data is not going to be corrupted (like getting half-written data file on abnormal program exit or power loss).
-- File system abstraction. For example, data can be stored in-memory using built-in [memfs](https://github.com/streamich/memfs) abstraction.
+- File system abstraction.
 - Custom adapters support. See [fs-json-store-encryption-adapter](https://github.com/vladimiry/fs-json-store-encryption-adapter) as an example.
 - Custom validation functions support.
 - Optimistic locking support (versioning).
@@ -64,8 +64,8 @@ import {Store} from "fs-json-store";
 
 - **`options`** `(object, required)`: an object with the flowing properties:
     - **`file`** `(string, required)`: store file path.
-    - **`fs`** `(object, optional, defaults to the node's "fs" wrapper)`: file system abstraction implementation. There are two built-in implementations: wrapped node's `fs` and [memfs](https://github.com/streamich/memfs) modules. Custom abstractions can be added implementing the `StoreFs` interface.
-    - **`adapter`** `(object, optional)`: object or class instance with the `write(data: Buffer): Promise<Buffer>` and `read(data: Buffer): Promise<Buffer` functions implemented. Custom adapter can be used for example for data encryption/archiving.
+    - **`fs`** `(object, optional, defaults to the built-in node's "fs" wrapper)`: file system abstraction implementation. There is ony one built-in implementations which is a wrapped node's `fs` module. Custom abstractions can be added implementing the `StoreFs` interface.
+    - **`adapter`** `(object, optional)`: object or class instance with the `write(data: Buffer): Promise<Buffer>` and `read(data: Buffer): Promise<Buffer` functions implemented. The custom adapter can be used for example for data encryption/archiving.
     - **`optimisticLocking`** `(boolean, optional, defaults to false)`: flag property that toggles optimistic locking feature. With optimistic locking feature enabled stored data must be of the JSON `object` type, since the system `_rev` counter property needs be injected into the stored object.
 
     - **`validators`** `(array, optional)`: array of the custom validation functions with the ```(data) => Promise<string | null>``` signature, where `data` is the stored data. Store executes exposed `validate` method during both `read / write` operations.

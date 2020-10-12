@@ -1,24 +1,25 @@
 import kindOf from "kind-of";
 import path from "path";
-import properLockfile from "proper-lockfile";
+import properLockfile, {LockOptions} from "proper-lockfile";
 import {callbackify} from "util";
+import {fs as defaultFs} from "./fs-impl/fs";
 
 import * as Model from "./model";
-import {StoreFsReference} from "./model";
-import {fs as defaultFs} from "./fs-impl/fs/index";
+import {StoreFs} from "./model";
 import {FS_ERROR_CODE_EEXIST, FS_ERROR_CODE_ENOENT, MKDIR_MODE} from "./constants";
-import {NAME as MEMFS_NAME} from "./fs-impl/mem-fs";
 import {TODO} from "./types";
 
 export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
     private readonly options: Model.StoreOptions<E>;
     private readonly serialize: Required<Model.StoreOptionsInput<E>>["serialize"];
     private readonly deserialize: Required<Model.StoreOptionsInput<E>>["deserialize"];
+    private readonly properLockfileFs: Required<LockOptions>["fs"];
 
     constructor(options: Model.StoreOptionsInput<E>) {
-        this.options = Object.freeze({...options, fs: options.fs || defaultFs});
-        this.serialize = options.serialize || ((data: E) => Buffer.from(JSON.stringify(data)));
-        this.deserialize = options.deserialize || ((data: Uint8Array | Buffer) => JSON.parse(Buffer.from(data).toString()));
+        this.options = Object.freeze({...options, fs: options.fs ?? defaultFs});
+        this.serialize = options.serialize ?? ((data: E) => Buffer.from(JSON.stringify(data)));
+        this.deserialize = options.deserialize ?? ((data: Uint8Array | Buffer) => JSON.parse(Buffer.from(data).toString()));
+        this.properLockfileFs = this.callbackifyFsImpl();
     }
 
     get adapter(): Model.StoreAdapter | undefined {
@@ -85,7 +86,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         }
 
         const buffer = await this.fs.readFile(this.file);
-        const adapter = (options && options.adapter) || this.adapter;
+        const adapter = (options && options.adapter) ?? this.adapter;
         const adaptedBuffer = adapter ? await adapter.read(buffer) : buffer;
         const data = this.deserialize(adaptedBuffer);
 
@@ -128,7 +129,10 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
 
         if (this.optimisticLocking) {
             const nextRevision = await this.resolveNewRevision(data, options && options.readAdapter);
-            const releaseLock = await properLockfile.lock(`${this.file}`, {fs: this.callbackifiedFsImpl(), realpath: false});
+            const releaseLock = await properLockfile.lock(
+                `${this.file}`,
+                {fs: this.properLockfileFs, realpath: false},
+            );
 
             try {
                 return await finalAction(Object.assign({}, data, {_rev: nextRevision}));
@@ -222,19 +226,18 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         }
     }
 
-    protected callbackifiedFsImpl(): Record<keyof StoreFsReference, (...params: TODO[]) => void> {
-        if (this.fs._name === MEMFS_NAME) {
-            return this.fs._impl;
-        }
-
+    protected callbackifyFsImpl(): Record<keyof StoreFs, (...args: unknown[]) => unknown> {
         return Object
             .keys(this.fs._impl)
-            .filter((key) => {
-                return !["writeFileAtomic", "impl"].includes(key) && typeof this.fs._impl[key] === "function";
-            })
-            .reduce((accumulator, key) => {
-                accumulator[key] = callbackify(this.fs._impl[key]);
-                return accumulator;
-            }, {} as TODO);
+            .filter((key) => typeof this.fs._impl[key] === "function")
+            .reduce(
+                (accumulator, key) => {
+                    accumulator[key] = callbackify(
+                        this.fs._impl[key],
+                    );
+                    return accumulator;
+                },
+                {} as TODO,
+            );
     }
 }

@@ -1,7 +1,6 @@
 // tslint:disable  no-any
 export type TODO = any;
 
-export type Arguments<F extends (...x: TODO[]) => TODO> =
-    F extends (...x: infer A) => TODO ? A : never;
+type Impossible<K extends keyof TODO> = { [P in K]: never }
 
-export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+export type NoExtraProps<T, U extends T = T> = U & Impossible<Exclude<keyof U, keyof T>>;

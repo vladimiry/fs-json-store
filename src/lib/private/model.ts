@@ -1,8 +1,8 @@
 import {NAME as FS_NAME} from "./fs-impl/fs";
-import {NAME as MEMFS_NAME} from "./fs-impl/mem-fs";
-import {STORE_FS_METHODS} from "./constants";
 import {WriteFile, WriteFileAtomic} from "./fs-write-model";
 import {TODO} from "./types";
+import {promisify} from "util";
+import fs from "fs";
 
 export interface Store<E extends StoreEntity> extends StoreOptions<E> {
     clone(opts?: Partial<StoreOptions<E>>): Store<E>;
@@ -50,10 +50,25 @@ export interface StoreAdapter {
 
 export type StoreValidator<E extends StoreEntity> = (data: E) => Promise<string | null>;
 
-export type StoreFsReference = typeof STORE_FS_METHODS & WriteFile;
+const storeFsMethods = Object.freeze({
+    chmod: promisify(fs.chmod),
+    chown: promisify(fs.chown),
+    close: promisify(fs.close),
+    fsync: promisify(fs.fsync),
+    mkdir: promisify(fs.mkdir),
+    open: promisify(fs.open),
+    readFile: promisify(fs.readFile),
+    realpath: promisify(fs.realpath),
+    rename: promisify(fs.rename),
+    stat: promisify(fs.stat),
+    unlink: promisify(fs.unlink),
+    writeFile: promisify(fs.writeFile),
+});
+
+export type StoreFsReference = typeof storeFsMethods & WriteFile;
 
 export type StoreFs =
     StoreFsReference
     & WriteFileAtomic
     & { _impl: TODO; }
-    & { _name: typeof MEMFS_NAME | typeof FS_NAME | string; };
+    & { _name: typeof FS_NAME | string; };
