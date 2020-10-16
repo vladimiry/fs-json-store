@@ -3,7 +3,7 @@
   // https://www.typescriptlang.org/docs/handbook/compiler-options.html
   "extends": "./tsconfig.checks.json",
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2017",
     "module": "commonjs",
     "moduleResolution": "node",
     "resolveJsonModule": true,
