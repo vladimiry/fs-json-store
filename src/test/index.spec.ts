@@ -196,12 +196,8 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
     });
 
     test(`${opts.fsName}: custom validation`, async (t) => {
-        interface Account {
-            login: string;
-        }
-
         interface Accounts extends Partial<Model.StoreEntity> {
-            accounts: Account[];
+            accounts: Array<{ login: string }>
         }
 
         const uniqueLoginValidatorSpy = sinon.spy();
@@ -256,6 +252,24 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
         t.false(await store.readable());
     });
 
+    test(`${opts.fsName}: specified "lockfilePathResolver"`, async (t) => {
+        interface Accounts extends Partial<Model.StoreEntity> {
+            accounts: Array<{ login: string }>
+        }
+        const expectedLockfilePathExtension = randomstring.generate({length: 7});
+        const {store, spies} = buildMockedStore<Accounts>(t, {
+            optimisticLocking: true,
+            lockfilePathResolver() {
+                return `${this.file}.lock.${expectedLockfilePathExtension}`;
+            },
+        });
+        await store.write({accounts: []});
+        // "proper-lockfile" creates locks as directories (since it's an atomic operation on all systems)
+        // so we verify the "mkdir" call args
+        t.is(spies.mkdirCallArgs.callCount, 1);
+        t.is(spies.mkdirCallArgs.firstCall.firstArg, `${store.file}.lock.${expectedLockfilePathExtension}`);
+    });
+
     // TODO test concurrent writing
 
     function buildMockedStore<E extends Partial<Model.StoreEntity> = StoredObject>(
@@ -268,11 +282,25 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
                 read: sinon.spy(),
             },
             validator: sinon.spy(),
+            mkdirCallArgs: sinon.spy(),
         };
         const options = Object.freeze({
             ...{
                 file: path.join(opts.outputPath, randomstring.generate({length: 7})),
-                fs,
+                fs: {
+                    ...fs,
+                    _impl: {
+                        ...fs._impl,
+                        mkdir: (() => {
+                            const overridden: typeof fs._impl.mkdir = function(this: unknown, ...args: unknown[]) {
+                                const result = fs._impl.mkdir.apply(this, args);
+                                spies.mkdirCallArgs(...args);
+                                return result;
+                            };
+                            return overridden;
+                        })(),
+                    },
+                },
                 optimisticLocking: true,
                 adapter: {
                     async write(data: Buffer): Promise<Buffer> {

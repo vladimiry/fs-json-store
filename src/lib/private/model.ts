@@ -32,6 +32,8 @@ export interface StoreOptionsBase<E extends StoreEntity> {
     readonly adapter?: StoreAdapter;
     readonly optimisticLocking?: boolean;
     readonly validators?: Array<StoreValidator<E>>;
+    readonly lockfilePathResolver?: (file: string) => string;
+    readonly lockfileRealpath?: boolean;
 }
 
 export type StoreOptions<E extends StoreEntity> = StoreOptionsBase<E> & { readonly fs: StoreFs; };

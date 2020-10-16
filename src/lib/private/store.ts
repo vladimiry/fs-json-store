@@ -16,7 +16,11 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
     private readonly properLockfileFs: Required<LockOptions>["fs"];
 
     constructor(options: Model.StoreOptionsInput<E>) {
-        this.options = Object.freeze({...options, fs: options.fs ?? defaultFs});
+        this.options = Object.freeze({
+            ...options,
+            fs: options.fs ?? defaultFs,
+            lockfileRealpath: options.lockfileRealpath ?? false,
+        });
         this.serialize = options.serialize ?? ((data: E) => Buffer.from(JSON.stringify(data)));
         this.deserialize = options.deserialize ?? ((data: Uint8Array | Buffer) => JSON.parse(Buffer.from(data).toString()));
         this.properLockfileFs = this.callbackifyFsImpl();
@@ -47,7 +51,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
             ...this.options,
             ...opts,
             // enforcing options state to always have the "file" property filled
-            file: path.resolve(opts && opts.file || this.file),
+            file: path.resolve(opts?.file ?? this.file),
         });
     }
 
@@ -129,9 +133,14 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
 
         if (this.optimisticLocking) {
             const nextRevision = await this.resolveNewRevision(data, options && options.readAdapter);
+            const lockfilePath =  this.resolveLockfilePath();
             const releaseLock = await properLockfile.lock(
-                `${this.file}`,
-                {fs: this.properLockfileFs, realpath: false},
+                this.file,
+                {
+                    fs: this.properLockfileFs,
+                    realpath: this.options.lockfileRealpath,
+                    ...(lockfilePath && {lockfilePath}),
+                },
             );
 
             try {
@@ -160,6 +169,10 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
 
     public async remove(): Promise<void> {
         await this.fs.unlink(this.file);
+    }
+
+    protected resolveLockfilePath(): string | undefined {
+        return this.options.lockfilePathResolver?.call(this, this.file);
     }
 
     protected async resolveNewRevision(payloadData: E, readAdapter?: Model.StoreAdapter): Promise<number> {
