@@ -1,6 +1,7 @@
 import combineErrors from "combine-errors";
 import imurmurhash from "imurmurhash";
 import {PathLike, Stats} from "fs";
+import onExit from "signal-exit";
 
 import * as Model from "./model";
 import {FS_ERROR_CODE_ENOENT} from "../constants";
@@ -10,6 +11,8 @@ import {TODO} from "../types";
 
 const defaultAtomicOptions: Model.WriteFileAtomicOptions = {
     fsync: true,
+    disableChmod: true,
+    disableChown: true,
 };
 
 const generateTmpFileName: (file: string) => string = ((): TODO => {
@@ -23,7 +26,8 @@ const generateTmpFileName: (file: string) => string = ((): TODO => {
 })();
 
 async function writeFileAtomic(
-    fs: Pick<StoreFsReference, "stat" | "realpath" | "open" | "writeFile" | "fsync" | "close" | "chown" | "chmod" | "rename" | "unlink">,
+    fs: Pick<StoreFsReference, "stat" | "realpath" | "open" | "writeFile" | "fsync" | "close" | "chown" | "chmod" | "rename" | "unlink">
+        & { unlinkSync: typeof import("fs")["unlinkSync"] },
     filePath: PathLike,
     data: TODO,
     writeFileOptions?: WriteFileOptions,
@@ -31,62 +35,89 @@ async function writeFileAtomic(
 ): Promise<void> {
     const atomicOptions: Model.WriteFileAtomicOptions = {...defaultAtomicOptions, ...atomicOptionsInput};
     const file = filePath.toString();
-
-    // in order to reduce the same file locking probability renaming occurs in serial mode using "queue" approach
-    // locking leads to the "EPERM" errors on Windows https://github.com/isaacs/node-graceful-fs/pull/119
-    const tmpFile = await (async () => {
-        let fileStats: Stats | undefined;
-
-        try {
-            fileStats = await fs.stat(file);
-        } catch (error) {
-            if (error.code !== FS_ERROR_CODE_ENOENT) {
-                throw error;
-            }
-        }
-
-        const resultFile = generateTmpFileName(fileStats ? await fs.realpath(file) : file);
-        const fd = await fs.open(resultFile, "w");
-
-        try {
-            await fs.writeFile(resultFile, data, writeFileOptions);
-
-            if (atomicOptions.fsync) {
-                await fs.fsync(fd);
-            }
-        } finally {
-            await fs.close(fd);
-        }
-
-        if (fileStats) {
-            if (!atomicOptions.disableChown) {
-                await fs.chown(resultFile, fileStats.uid, fileStats.gid);
-            }
-            if (!atomicOptions.disableChmod) {
-                await fs.chmod(resultFile, fileStats.mode);
-            }
-        }
-
-        return resultFile;
-    })();
+    const cleanup: { threw: boolean; unlinkTmpFileSync?: () => void; removeOnExitHandler?: () => void } = {threw: true};
 
     try {
-        return await fs.rename(tmpFile, file);
-    } catch (renameError) {
-        const errors = [
-            renameError,
-            new Error(`Failed to rename "${tmpFile}" => "${file}".`),
-        ];
+        // in order to reduce the same file locking probability renaming occurs in serial mode using "queue" approach
+        // locking leads to the "EPERM" errors on Windows https://github.com/isaacs/node-graceful-fs/pull/119
+        const tmpFile = await (async () => {
+            let fileStats: Stats | undefined;
 
-        // making sure temporary file is removed
-        // TODO consider removing temp file on "process.on('exit')"
+            try {
+                fileStats = await fs.stat(file);
+            } catch (error) {
+                if (error.code !== FS_ERROR_CODE_ENOENT) {
+                    throw error;
+                }
+            }
+
+            const resultFile = generateTmpFileName(fileStats ? await fs.realpath(file) : file);
+
+            cleanup.removeOnExitHandler = onExit(
+                cleanup.unlinkTmpFileSync = () => {
+                    try {
+                        fs.unlinkSync(tmpFile);
+                    } catch (_) {
+                        // NOOP
+                    }
+                },
+            );
+
+            const fd = await fs.open(resultFile, "w");
+
+            try {
+                await fs.writeFile(resultFile, data, writeFileOptions);
+
+                if (atomicOptions.fsync) {
+                    await fs.fsync(fd);
+                }
+            } finally {
+                try {
+                    await fs.close(fd);
+                } catch (_) {
+                    // the "fd" might be already closed by error
+                }
+            }
+
+            if (fileStats) {
+                if (!atomicOptions.disableChown) {
+                    await fs.chown(resultFile, fileStats.uid, fileStats.gid);
+                }
+                if (!atomicOptions.disableChmod) {
+                    await fs.chmod(resultFile, fileStats.mode);
+                }
+            }
+
+            return resultFile;
+        })();
+
         try {
-            await fs.unlink(tmpFile);
-        } catch (unlinkError) {
-            errors.push(unlinkError);
+            return await fs.rename(tmpFile, file);
+        } catch (renameError) {
+            const errors = [
+                renameError,
+                new Error(`Failed to rename "${tmpFile}" => "${file}".`),
+            ] as const;
+
+            try {
+                await fs.unlink(tmpFile);
+            } catch (_) {
+                // also gets unlinked in "finally" block
+            }
+
+            throw combineErrors(errors);
         }
 
-        throw combineErrors(errors);
+        cleanup.threw = false;
+    } finally {
+        const {threw, removeOnExitHandler, unlinkTmpFileSync} = cleanup;
+
+        if (removeOnExitHandler) {
+            removeOnExitHandler();
+        }
+        if (threw && unlinkTmpFileSync) {
+            unlinkTmpFileSync();
+        }
     }
 }
 

@@ -56,7 +56,10 @@ export function volume(
             writeFileOptions?: WriteFileOptions,
         ): Promise<void> {
             return writeFileAtomic(
-                impl,
+                {
+                    ...impl,
+                    unlinkSync: regularNodeFs.unlinkSync,
+                },
                 path,
                 data,
                 writeFileOptions,

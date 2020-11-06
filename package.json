@@ -1,6 +1,6 @@
 {
   "name": "fs-json-store",
-  "version": "6.0.0",
+  "version": "7.0.0-beta2",
   "description": "Node.js module for storing JSON data on the file system",
   "author": "Vladimir Yakovlev <dev.vladimir.y@gmail.com> (https://github.com/vladimiry)",
   "license": "MIT",
@@ -50,6 +50,7 @@
     "@types/node": "^12.12.6",
     "@types/proper-lockfile": "^4.1.0",
     "@types/randomstring": "^1.1.6",
+    "@types/signal-exit": "^3.0.0",
     "@types/sinon": "^9.0.8",
     "ava": "^3.13.0",
     "cross-env": "^7.0.2",
@@ -68,6 +69,7 @@
     "imurmurhash": "^0.1.4",
     "kind-of": "^6.0.3",
     "proper-lockfile": "^4.1.1",
+    "signal-exit": "^3.0.3",
     "tslib": "^2.0.3"
   }
 }
