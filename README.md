@@ -2,7 +2,7 @@
 
 is a module for Node.js for storing JSON data on the file system.
 
-[![Build Status: Linux / MacOS](https://travis-ci.org/vladimiry/fs-json-store.svg?branch=master)](https://travis-ci.org/vladimiry/fs-json-store) [![Build status: Windows](https://ci.appveyor.com/api/projects/status/xd0bul53gtt112lj?svg=true)](https://ci.appveyor.com/project/vladimiry/fs-json-store)
+[![GitHub Actions CI](https://github.com/vladimiry/fs-json-store/workflows/GitHub%20Actions%20CI/badge.svg?branch=master)](https://github.com/vladimiry/fs-json-store/actions)
 
 Module simply serializes/deserializes a file using `JSON.stringify / JSON.parse` functions, so it would not be a great idea to use it with a huge data sets, but it's ok for handling simple needs like storing app settings, etc.
 
