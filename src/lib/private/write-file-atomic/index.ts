@@ -92,7 +92,9 @@ async function writeFileAtomic(
         })();
 
         try {
-            return await fs.rename(tmpFile, file);
+            const result = await fs.rename(tmpFile, file);
+            cleanup.threw = false;
+            return result;
         } catch (renameError) {
             const errors = [
                 renameError,
@@ -107,8 +109,6 @@ async function writeFileAtomic(
 
             throw combineErrors(errors);
         }
-
-        cleanup.threw = false;
     } finally {
         const {threw, removeOnExitHandler, unlinkTmpFileSync} = cleanup;
 
