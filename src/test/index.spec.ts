@@ -168,31 +168,60 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
         t.deepEqual(state, expectedState);
 
         // full clone expect "file"
-        const {options} = buildMockedStore(t);
-        expectedState = {...options, file: store.file};
-        const store3 = store.clone(expectedState);
-        state = {
-            adapter: store3.adapter,
-            fs: store3.fs,
-            file: store3.file,
-            optimisticLocking: store3.optimisticLocking,
-            validators: store3.validators,
-        };
-        t.deepEqual(state, expectedState);
+        {
+            const {options} = buildMockedStore(t);
+            expectedState = {...options, file: store.file};
+            const store3 = store.clone(expectedState);
+            state = {
+                adapter: store3.adapter,
+                fs: store3.fs,
+                file: store3.file,
+                optimisticLocking: store3.optimisticLocking,
+                validators: store3.validators,
+            };
+            t.deepEqual(state, expectedState);
 
-        // reset clone
-        const store4 = store.clone({
-            adapter: undefined,
-            fs: undefined,
-            file: undefined,
-            optimisticLocking: undefined,
-            validators: undefined,
-        });
-        t.falsy(store4.adapter);
-        t.is(store4.fs, fs);
-        t.is(store4.file, store.file, `"file" should remain filled despite of the "undefined" parameter passed`);
-        t.falsy(store4.optimisticLocking);
-        t.falsy(store4.validators);
+            // reset clone
+            const store4 = store.clone({
+                adapter: undefined,
+                fs: undefined,
+                file: undefined,
+                optimisticLocking: undefined,
+                validators: undefined,
+            });
+            t.falsy(store4.adapter);
+            t.is(store4.fs, fs);
+            t.is(store4.file, store.file, `"file" should remain filled despite of the "undefined" parameter passed`);
+            t.falsy(store4.optimisticLocking);
+            t.falsy(store4.validators);
+        }
+
+        // proper class constructor used
+        {
+            const store2ExpectedPropValue = Symbol();
+            const store2ExpectedWriteMethod = (() => {}) as unknown as typeof Store.prototype.write;
+            type Store2Model = Model.StoreEntity & {};
+
+            class Store2 extends Store<Store2Model> {
+                readonly prop: typeof store2ExpectedPropValue;
+
+                constructor(arg: Model.StoreOptionsInput<Store2Model>) {
+                    super(arg);
+                    this.prop = store2ExpectedPropValue;
+                    this.write = store2ExpectedWriteMethod;
+                }
+            }
+
+            const store2Instance = new Store2({file: randomstring.generate({length: 5})});
+            const store2InstanceCopy = store2Instance.clone();
+            t.is(store2Instance.file, store2InstanceCopy.file);
+            t.true(store2Instance.constructor === store2InstanceCopy.constructor);
+            t.is(store2Instance.constructor.name, "Store2");
+            t.is(store2InstanceCopy.constructor.name, store2Instance.constructor.name);
+            t.is(store2Instance.write, store2ExpectedWriteMethod);
+            t.is(store2InstanceCopy.write, store2ExpectedWriteMethod);
+            t.is((store2InstanceCopy as typeof store2Instance).prop, store2ExpectedPropValue);
+        }
     });
 
     test(`${opts.fsName}: custom validation`, async (t) => {
@@ -256,6 +285,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
         interface Accounts extends Partial<Model.StoreEntity> {
             accounts: Array<{ login: string }>
         }
+
         const expectedLockfilePathExtension = randomstring.generate({length: 7});
         const {store, spies} = buildMockedStore<Accounts>(t, {
             optimisticLocking: true,
@@ -292,7 +322,7 @@ function run(fs: Model.StoreFs, opts: { fsName: string, outputPath: string }) {
                     _impl: {
                         ...fs._impl,
                         mkdir: (() => {
-                            const overridden: typeof fs._impl.mkdir = function(this: unknown, ...args: unknown[]) {
+                            const overridden: typeof fs._impl.mkdir = function (this: unknown, ...args: unknown[]) {
                                 const result = fs._impl.mkdir.apply(this, args);
                                 spies.mkdirCallArgs(...args);
                                 return result;

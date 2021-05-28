@@ -47,11 +47,17 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
     }
 
     public clone(opts?: Partial<Model.StoreOptions<E>>): Store<E> {
-        return new Store<E>({
+        // TODO typescript (class constructor typing) track the https://github.com/microsoft/TypeScript/issues/3841 to:
+        //      - type the return properly (return type should derived form "this.constructor")
+        //      - remove below "ts-ignore"
+        // @ts-ignore
+        return new this.constructor({
             ...this.options,
             ...opts,
             // enforcing options state to always have the "file" property filled
-            file: path.resolve(opts?.file ?? this.file),
+            file: opts?.file
+                ? path.resolve(opts.file)
+                : this.file
         });
     }
 
@@ -133,7 +139,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
 
         if (this.optimisticLocking) {
             const nextRevision = await this.resolveNewRevision(data, options && options.readAdapter);
-            const lockfilePath =  this.resolveLockfilePath();
+            const lockfilePath = this.resolveLockfilePath();
             const releaseLock = await properLockfile.lock(
                 this.file,
                 {
