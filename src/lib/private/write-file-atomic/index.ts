@@ -46,7 +46,7 @@ async function writeFileAtomic(
             try {
                 fileStats = await fs.stat(file);
             } catch (error) {
-                if (error.code !== FS_ERROR_CODE_ENOENT) {
+                if ((Object(error) as {code?: unknown}).code !== FS_ERROR_CODE_ENOENT) {
                     throw error;
                 }
             }

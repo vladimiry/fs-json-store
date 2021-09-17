@@ -67,7 +67,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         try {
             fd = await this.fs.open(this.file, "r+");
         } catch (error) {
-            if (error.code === FS_ERROR_CODE_ENOENT) {
+            if ((Object(error) as {code?: unknown}).code === FS_ERROR_CODE_ENOENT) {
                 return false;
             }
             throw error;
@@ -121,7 +121,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
         try {
             await this.fs.stat(dir);
         } catch (err) {
-            if (err.code === FS_ERROR_CODE_ENOENT) {
+            if ((Object(err) as {code?: unknown}).code === FS_ERROR_CODE_ENOENT) {
                 await this.mkdirRecursive(dir);
             } else {
                 throw err;
@@ -222,7 +222,7 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
                     break;
                 }
             } catch (err) {
-                if (err.code !== FS_ERROR_CODE_ENOENT) {
+                if ((Object(err) as {code?: unknown}).code !== FS_ERROR_CODE_ENOENT) {
                     throw err;
                 }
             }
@@ -238,7 +238,8 @@ export class Store<E extends Model.StoreEntity> implements Model.Store<E> {
             try {
                 await this.fs.mkdir(pathToCreate, MKDIR_MODE);
             } catch (error) {
-                if (error.code !== FS_ERROR_CODE_EEXIST) { // directory might already be created by another/parallel process
+                // directory might already be created by another/parallel process
+                if ((Object(error) as {code?: unknown}).code !== FS_ERROR_CODE_EEXIST) {
                     throw error;
                 }
             }
